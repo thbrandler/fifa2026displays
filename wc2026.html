@@ -332,10 +332,11 @@
 </div>
 
 <script>
-  /* Scale the fixed 1920x1080 stage to fit any viewport while keeping aspect ratio */
+  /* Scale the fixed 1920x1080 stage to fit any viewport while keeping aspect ratio.
+     0.9 leaves ~5% breathing room on every side. */
   function fitStage() {
     var stage = document.getElementById('stage');
-    var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 0.9;
     stage.style.transform = 'scale(' + scale + ')';
   }
   window.addEventListener('resize', fitStage);
