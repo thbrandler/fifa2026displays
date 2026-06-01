@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATN &ndash; FIFA World Cup 2026 Countdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    background: #1a1a1a;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Mulish', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pitch-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .pitch-bg svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.045;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100vw;
+    height: 100vh;
+    padding: 2vh 4vw;
+  }
+
+  /* TOP BANNER */
+  .top-banner {
+    display: flex;
+    align-items: center;
+    gap: 1.4vw;
+    margin-bottom: 3vh;
+  }
+
+  .atn-badge {
+    background: #009f88;
+    color: #ffffff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2vw;
+    letter-spacing: 0.14em;
+    padding: 0.7vh 2.5vw;
+    border-radius: 0.6vw;
+    text-transform: uppercase;
+  }
+
+  .divider-dot {
+    width: 0.6vw;
+    height: 0.6vw;
+    border-radius: 50%;
+    background: #444444;
+  }
+
+  .fifa-badge {
+    background: #242424;
+    border: 1px solid #333333;
+    color: #888888;
+    font-family: 'Mulish', sans-serif;
+    font-weight: 700;
+    font-size: 1.6vw;
+    letter-spacing: 0.12em;
+    padding: 0.7vh 2.5vw;
+    border-radius: 0.6vw;
+    text-transform: uppercase;
+  }
+
+  /* HEADLINE */
+  .headline {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 8.5vw;
+    color: #f0f0f0;
+    line-height: 1.05;
+    margin-bottom: 0.8vh;
+    letter-spacing: -0.01em;
+  }
+
+  .headline .accent {
+    color: #009f88;
+  }
+
+  .subline {
+    font-size: 1.6vw;
+    color: #666666;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 3.5vh;
+    font-weight: 600;
+  }
+
+  .subline .sep {
+    color: #009f88;
+    margin: 0 0.8vw;
+  }
+
+  /* COUNTDOWN */
+  .countdown-grid {
+    display: flex;
+    gap: 1.6vw;
+    justify-content: center;
+    margin-bottom: 3.5vh;
+  }
+
+  .unit-card {
+    background: #242424;
+    border: 1px solid #333333;
+    border-radius: 1vw;
+    padding: 2.5vh 3vw 2vh;
+    min-width: 13vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .unit-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 0.4vh;
+    background: #009f88;
+  }
+
+  .unit-number {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11vw;
+    color: #f0f0f0;
+    line-height: 1;
+    min-width: 3ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .unit-label {
+    font-size: 1.1vw;
+    color: #555555;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+  }
+
+  /* HOST CHIPS */
+  .host-info {
+    display: flex;
+    gap: 1.4vw;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2.5vh;
+    flex-wrap: wrap;
+  }
+
+  .host-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.9vw;
+    background: #242424;
+    border: 1px solid #333333;
+    border-radius: 6vw;
+    padding: 0.7vh 1.8vw 0.7vh 0.7vw;
+  }
+
+  .host-chip img {
+    width: 4vw;
+    height: 2.7vw;
+    border-radius: 0.3vw;
+    object-fit: cover;
+    display: block;
+    border: 1px solid #444444;
+  }
+
+  .host-chip strong {
+    color: #f0f0f0;
+    font-weight: 700;
+    font-size: 1.5vw;
+  }
+
+  /* KICKOFF */
+  .kick-off {
+    font-size: 1.2vw;
+    color: #555555;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 2.5vh;
+    font-weight: 600;
+  }
+
+  .kick-off .highlight {
+    color: #009f88;
+  }
+
+  .kick-off .sep {
+    margin: 0 0.7vw;
+  }
+
+  /* BET STRIP */
+  .bet-strip {
+    background: #242424;
+    border: 1px solid #333333;
+    border-radius: 0.7vw;
+    padding: 1.2vh 2.8vw;
+    font-size: 1.4vw;
+    color: #888888;
+    display: flex;
+    align-items: center;
+    gap: 1vw;
+    font-weight: 600;
+  }
+
+  .bet-strip strong {
+    color: #009f88;
+    font-weight: 700;
+  }
+
+  .pulse-dot {
+    width: 0.8vw;
+    height: 0.8vw;
+    border-radius: 50%;
+    background: #009f88;
+    flex-shrink: 0;
+    animation: pulse-anim 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse-anim {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.65); }
+  }
+</style>
+</head>
+<body>
+
+<div class="pitch-bg">
+  <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect x="80" y="60" width="1760" height="960" fill="none" stroke="#009f88" stroke-width="4"/>
+    <line x1="960" y1="60" x2="960" y2="1020" stroke="#009f88" stroke-width="4"/>
+    <circle cx="960" cy="540" r="200" fill="none" stroke="#009f88" stroke-width="4"/>
+    <circle cx="960" cy="540" r="8" fill="#009f88"/>
+    <rect x="80" y="280" width="280" height="520" fill="none" stroke="#009f88" stroke-width="4"/>
+    <rect x="1560" y="280" width="280" height="520" fill="none" stroke="#009f88" stroke-width="4"/>
+    <rect x="80" y="380" width="110" height="320" fill="none" stroke="#009f88" stroke-width="3"/>
+    <rect x="1730" y="380" width="110" height="320" fill="none" stroke="#009f88" stroke-width="3"/>
+    <circle cx="80" cy="540" r="120" fill="none" stroke="#009f88" stroke-width="3"/>
+    <circle cx="1840" cy="540" r="120" fill="none" stroke="#009f88" stroke-width="3"/>
+  </svg>
+</div>
+
+<div class="container">
+
+  <div class="top-banner">
+    <div class="atn-badge">ATN</div>
+    <div class="divider-dot"></div>
+    <div class="fifa-badge">FIFA World Cup 2026</div>
+  </div>
+
+  <div class="headline">The World Cup <span class="accent">Countdown</span></div>
+  <div class="subline">North America <span class="sep">&mdash;</span> June 11 <span class="sep">&middot;</span> 2026</div>
+
+  <div class="countdown-grid">
+    <div class="unit-card">
+      <div class="unit-number" id="cd-days">--</div>
+      <div class="unit-label">Days</div>
+    </div>
+    <div class="unit-card">
+      <div class="unit-number" id="cd-hours">--</div>
+      <div class="unit-label">Hours</div>
+    </div>
+    <div class="unit-card">
+      <div class="unit-number" id="cd-mins">--</div>
+      <div class="unit-label">Mins</div>
+    </div>
+    <div class="unit-card">
+      <div class="unit-number" id="cd-secs">--</div>
+      <div class="unit-label">Secs</div>
+    </div>
+  </div>
+
+  <div class="host-info">
+    <div class="host-chip">
+      <img src="./us.png" alt="USA flag">
+      <strong>USA</strong>
+    </div>
+    <div class="host-chip">
+      <img src="./ca.png" alt="Canada flag">
+      <strong>Canada</strong>
+    </div>
+    <div class="host-chip">
+      <img src="./mx.png" alt="Mexico flag">
+      <strong>Mexico</strong>
+    </div>
+  </div>
+
+  <div class="kick-off">
+    Opening Match <span class="sep">&middot;</span> <span class="highlight">June 11 &mdash; Mexico City</span>
+  </div>
+
+  <div class="bet-strip">
+    <div class="pulse-dot"></div>
+    <span>Internal prediction pool active &nbsp;&middot;&nbsp; <strong>Place your bets!</strong></span>
+  </div>
+
+</div>
+
+<script>
+  function updateCountdown() {
+    var target = new Date('2026-06-11T20:00:00-06:00');
+    var now = new Date();
+    var diff = target - now;
+    if (diff <= 0) {
+      ['cd-days','cd-hours','cd-mins','cd-secs'].forEach(function(id) {
+        document.getElementById(id).textContent = '00';
+      });
+      return;
+    }
+    var days  = Math.floor(diff / 86400000);
+    var hours = Math.floor((diff % 86400000) / 3600000);
+    var mins  = Math.floor((diff % 3600000) / 60000);
+    var secs  = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cd-days').textContent  = String(days).padStart(2,'0');
+    document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
+    document.getElementById('cd-mins').textContent  = String(mins).padStart(2,'0');
+    document.getElementById('cd-secs').textContent  = String(secs).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+</script>
+
+</body>
+</html>
