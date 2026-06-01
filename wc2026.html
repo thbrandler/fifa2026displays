@@ -22,7 +22,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
   }
 
   .pitch-bg {
@@ -38,25 +37,28 @@
     opacity: 0.045;
   }
 
-  .container {
+  /* Fixed 1920x1080 stage scaled to fit viewport.
+     All sizing is in px against this stage, so it scales uniformly. */
+  .stage {
     position: relative;
     z-index: 2;
+    width: 1920px;
+    height: 1080px;
+    transform-origin: center center;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    width: 100vw;
-    height: 100vh;
-    padding: 2vh 4vw;
+    padding: 40px 80px;
   }
 
   /* TOP BANNER */
   .top-banner {
     display: flex;
     align-items: center;
-    gap: 1.4vw;
-    margin-bottom: 2.5vh;
+    gap: 28px;
+    margin-bottom: 50px;
   }
 
   .atn-badge {
@@ -64,16 +66,16 @@
     color: #ffffff;
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 1.6vw;
+    font-size: 36px;
     letter-spacing: 0.14em;
-    padding: 0.6vh 2.2vw;
-    border-radius: 0.5vw;
+    padding: 16px 52px;
+    border-radius: 12px;
     text-transform: uppercase;
   }
 
   .divider-dot {
-    width: 0.5vw;
-    height: 0.5vw;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: #444444;
   }
@@ -84,10 +86,10 @@
     color: #888888;
     font-family: 'Mulish', sans-serif;
     font-weight: 700;
-    font-size: 1.3vw;
+    font-size: 28px;
     letter-spacing: 0.12em;
-    padding: 0.6vh 2.2vw;
-    border-radius: 0.5vw;
+    padding: 16px 52px;
+    border-radius: 12px;
     text-transform: uppercase;
   }
 
@@ -95,10 +97,10 @@
   .headline {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 7.5vw;
+    font-size: 130px;
     color: #f0f0f0;
     line-height: 1.05;
-    margin-bottom: 0.6vh;
+    margin-bottom: 16px;
     letter-spacing: -0.01em;
   }
 
@@ -107,37 +109,37 @@
   }
 
   .subline {
-    font-size: 1.2vw;
+    font-size: 30px;
     color: #666666;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    margin-bottom: 3vh;
+    margin-bottom: 60px;
     font-weight: 600;
   }
 
   .subline .sep {
     color: #009f88;
-    margin: 0 0.8vw;
+    margin: 0 16px;
   }
 
   /* COUNTDOWN */
   .countdown-grid {
     display: flex;
-    gap: 1.4vw;
+    gap: 32px;
     justify-content: center;
-    margin-bottom: 3vh;
+    margin-bottom: 60px;
   }
 
   .unit-card {
     background: #242424;
     border: 1px solid #333333;
-    border-radius: 0.8vw;
-    padding: 2vh 2.8vw 1.6vh;
-    min-width: 12vw;
+    border-radius: 20px;
+    padding: 44px 56px 36px;
+    min-width: 240px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6vh;
+    gap: 14px;
     position: relative;
     overflow: hidden;
   }
@@ -146,14 +148,14 @@
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 0.35vh;
+    height: 5px;
     background: #009f88;
   }
 
   .unit-number {
     font-family: 'Syne', sans-serif;
     font-weight: 700;
-    font-size: 9.5vw;
+    font-size: 150px;
     color: #f0f0f0;
     line-height: 1;
     min-width: 3ch;
@@ -162,7 +164,7 @@
   }
 
   .unit-label {
-    font-size: 0.9vw;
+    font-size: 24px;
     color: #555555;
     text-transform: uppercase;
     letter-spacing: 0.18em;
@@ -172,27 +174,27 @@
   /* HOST CHIPS */
   .host-info {
     display: flex;
-    gap: 1.2vw;
+    gap: 28px;
     align-items: center;
     justify-content: center;
-    margin-bottom: 2vh;
+    margin-bottom: 44px;
     flex-wrap: wrap;
   }
 
   .host-chip {
     display: flex;
     align-items: center;
-    gap: 0.7vw;
+    gap: 18px;
     background: #242424;
     border: 1px solid #333333;
-    border-radius: 6vw;
-    padding: 0.6vh 1.4vw 0.6vh 0.6vw;
+    border-radius: 60px;
+    padding: 14px 36px 14px 14px;
   }
 
   .host-chip img {
-    width: 3vw;
-    height: 2vw;
-    border-radius: 0.2vw;
+    width: 78px;
+    height: 52px;
+    border-radius: 6px;
     object-fit: cover;
     display: block;
     border: 1px solid #444444;
@@ -201,16 +203,16 @@
   .host-chip strong {
     color: #f0f0f0;
     font-weight: 700;
-    font-size: 1.1vw;
+    font-size: 30px;
   }
 
   /* KICKOFF */
   .kick-off {
-    font-size: 0.95vw;
+    font-size: 26px;
     color: #555555;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    margin-bottom: 2vh;
+    margin-bottom: 50px;
     font-weight: 600;
   }
 
@@ -219,20 +221,20 @@
   }
 
   .kick-off .sep {
-    margin: 0 0.6vw;
+    margin: 0 14px;
   }
 
   /* BET STRIP */
   .bet-strip {
     background: #242424;
     border: 1px solid #333333;
-    border-radius: 0.6vw;
-    padding: 1vh 2.2vw;
-    font-size: 1.1vw;
+    border-radius: 14px;
+    padding: 26px 64px;
+    font-size: 38px;
     color: #888888;
     display: flex;
     align-items: center;
-    gap: 0.8vw;
+    gap: 24px;
     font-weight: 600;
   }
 
@@ -242,8 +244,8 @@
   }
 
   .pulse-dot {
-    width: 0.6vw;
-    height: 0.6vw;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: #009f88;
     flex-shrink: 0;
@@ -273,7 +275,7 @@
   </svg>
 </div>
 
-<div class="container">
+<div class="stage" id="stage">
 
   <div class="top-banner">
     <div class="atn-badge">ATN</div>
@@ -330,6 +332,15 @@
 </div>
 
 <script>
+  /* Scale the fixed 1920x1080 stage to fit any viewport while keeping aspect ratio */
+  function fitStage() {
+    var stage = document.getElementById('stage');
+    var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('resize', fitStage);
+  fitStage();
+
   function updateCountdown() {
     var target = new Date('2026-06-11T20:00:00-06:00');
     var now = new Date();
