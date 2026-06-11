@@ -76,38 +76,38 @@
   }
   .main-content { display:flex; flex-direction:column; min-height:0; min-width:0; }
 
-  /* ===== WEEK VIEW ===== */
+  /* ===== WEEK VIEW (3-day) ===== */
   .days {
-    display:grid; grid-template-columns:repeat(7,1fr); gap:10px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
     flex:1; position:relative; min-height:0;
   }
-  .day { background:var(--bg-elev); border-radius:12px; padding:14px 10px 10px; display:flex; flex-direction:column; border:1px solid var(--border); overflow:hidden; }
+  .day { background:var(--bg-elev); border-radius:14px; padding:22px 20px 18px; display:flex; flex-direction:column; border:1px solid var(--border); overflow:hidden; }
   .day.today { border-color:var(--atn-teal); box-shadow:0 0 0 1px var(--atn-teal); }
-  .day-header { display:flex; align-items:baseline; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border); margin-bottom:8px; }
-  .day-name { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; color:var(--atn-teal-bright); letter-spacing:0.06em; }
-  .day-date { font-family:'Mulish',sans-serif; font-weight:700; font-size:11px; color:var(--text-dim); letter-spacing:0.12em; }
-  .matches { display:flex; flex-direction:column; gap:7px; }
-  .day-empty { font-family:'Mulish',sans-serif; font-weight:600; font-size:11px; color:var(--text-dimmer); text-align:center; margin-top:14px; letter-spacing:0.15em; text-transform:uppercase; }
+  .day-header { display:flex; align-items:baseline; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:14px; }
+  .day-name { font-family:'Syne',sans-serif; font-weight:800; font-size:28px; color:var(--atn-teal-bright); letter-spacing:0.06em; }
+  .day-date { font-family:'Mulish',sans-serif; font-weight:700; font-size:14px; color:var(--text-dim); letter-spacing:0.14em; }
+  .matches { display:flex; flex-direction:column; gap:12px; }
+  .day-empty { font-family:'Mulish',sans-serif; font-weight:600; font-size:13px; color:var(--text-dimmer); text-align:center; margin-top:20px; letter-spacing:0.18em; text-transform:uppercase; }
 
-  .match { background:var(--bg-card); border-radius:8px; padding:7px 9px 8px; border-left:3px solid var(--atn-teal); }
+  .match { background:var(--bg-card); border-radius:10px; padding:12px 16px 13px; border-left:4px solid var(--atn-teal); }
   .match.completed { opacity:0.65; border-left-color:var(--text-dimmer); }
   .match.live { border-left-color:var(--live); background:linear-gradient(90deg, rgba(255,59,48,0.10), var(--bg-card)); }
-  .match-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
-  .match-group { font-family:'Syne',sans-serif; font-weight:700; font-size:9px; color:var(--atn-teal-bright); letter-spacing:0.18em; }
+  .match-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+  .match-group { font-family:'Syne',sans-serif; font-weight:700; font-size:12px; color:var(--atn-teal-bright); letter-spacing:0.2em; }
   .match.live .match-group { color:var(--live); }
-  .match-time, .match-status { font-family:'Mulish',sans-serif; font-weight:800; font-size:10px; color:var(--text); letter-spacing:0.04em; display:flex; align-items:center; gap:4px; }
+  .match-time, .match-status { font-family:'Mulish',sans-serif; font-weight:800; font-size:13px; color:var(--text); letter-spacing:0.04em; display:flex; align-items:center; gap:5px; }
   .match.completed .match-status { color:var(--text-dim); }
-  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--live); animation:pulse 1.5s ease-in-out infinite; }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--live); animation:pulse 1.5s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.25); } }
-  .match-teams { display:flex; align-items:center; justify-content:space-between; gap:5px; }
-  .team { display:flex; align-items:center; gap:5px; flex:1; min-width:0; }
+  .match-teams { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .team { display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
   .team.right { justify-content:flex-end; }
-  .flag { width:22px; height:15px; border-radius:2px; object-fit:cover; flex-shrink:0; box-shadow:0 1px 3px rgba(0,0,0,0.4); }
+  .flag { width:36px; height:24px; border-radius:3px; object-fit:cover; flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
   .flag.placeholder { background:var(--border); }
-  .code { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:var(--text); letter-spacing:0.04em; }
-  .code.placeholder { font-size:9px; letter-spacing:0.04em; color:var(--text-dim); text-transform:uppercase; font-weight:700; }
-  .vs { font-family:'Mulish',sans-serif; font-weight:700; font-size:9px; color:var(--text-dimmer); letter-spacing:0.18em; }
-  .score { font-family:'Syne',sans-serif; font-weight:800; font-size:16px; color:var(--text); letter-spacing:0.04em; }
+  .code { font-family:'Syne',sans-serif; font-weight:700; font-size:22px; color:var(--text); letter-spacing:0.04em; }
+  .code.placeholder { font-size:13px; letter-spacing:0.04em; color:var(--text-dim); text-transform:uppercase; font-weight:700; }
+  .vs { font-family:'Mulish',sans-serif; font-weight:700; font-size:13px; color:var(--text-dimmer); letter-spacing:0.22em; }
+  .score { font-family:'Syne',sans-serif; font-weight:800; font-size:26px; color:var(--text); letter-spacing:0.04em; }
   .match.live .score { color:var(--live); }
 
   /* ===== DAY VIEW ===== */
@@ -594,7 +594,7 @@ function matchesInRange(start, days) {
    ========================================================= */
 function renderWeekView(now, enrichedByDate) {
   const today = dateStr(now);
-  const days = matchesInRange(now, 7);
+  const days = matchesInRange(now, 3);
   let html = '<div class="days">';
   for (const {date, matches} of days) {
     const ds = dateStr(date);
@@ -790,9 +790,9 @@ async function update() {
     s.textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
     document.getElementById('content').innerHTML = renderDayView(now, todaysEnriched);
   } else {
-    sec.textContent = 'This Week';
+    sec.textContent = 'Next 3 Days';
     t.innerHTML = 'FIFA <span class="accent">2026</span>';
-    const last = addDays(now, 6);
+    const last = addDays(now, 2);
     s.textContent = fmtDate(now) + ' – ' + fmtDate(last);
     const enrichedByDate = {};
     for (const key of espnCache.keys()) {
@@ -804,7 +804,6 @@ async function update() {
 
   renderLeaderboard();
 }
-
 /* =========================================================
    SCALING + REFRESH
    ========================================================= */
