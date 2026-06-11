@@ -69,12 +69,48 @@
   .footer-tag { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; color:var(--text-dim); letter-spacing:0.22em; text-transform:uppercase; }
   .footer-meta { font-family:'Mulish',sans-serif; font-weight:700; font-size:11px; color:var(--text-dim); letter-spacing:0.2em; text-transform:uppercase; }
 
-  /* Body grid: main content + leaderboard panel */
+  /* Body grid: today + top 5 + shame zone */
   .body-grid {
-    flex:1; display:grid; grid-template-columns: 1fr 440px;
+    flex:1; display:grid; grid-template-columns: 1fr 1fr 1fr;
     gap:18px; margin-top:18px; min-height:0; position:relative; z-index:1;
   }
-  .main-content { display:flex; flex-direction:column; min-height:0; min-width:0; }
+
+  /* ===== TODAY PANEL ===== */
+  .today-panel, .leaderboard {
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:14px;
+    padding:20px 20px 14px; display:flex; flex-direction:column; min-height:0; min-width:0;
+  }
+  .panel-header, .lb-header { display:flex; align-items:baseline; justify-content:space-between; padding-bottom:12px; border-bottom:2px solid var(--border); margin-bottom:14px; flex-shrink:0; gap:12px; }
+  .panel-title, .lb-title { font-family:'Syne',sans-serif; font-weight:800; font-size:20px; letter-spacing:0.18em; color:var(--atn-teal-bright); text-transform:uppercase; white-space:nowrap; }
+  .panel-subtitle, .lb-subtitle { font-family:'Mulish',sans-serif; font-weight:700; font-size:11px; letter-spacing:0.2em; color:var(--text-dim); text-transform:uppercase; text-align:right; white-space:nowrap; }
+  .today-list { display:flex; flex-direction:column; gap:12px; flex:1; min-height:0; overflow:hidden; }
+  .today-empty { font-family:'Mulish',sans-serif; font-weight:700; font-size:13px; color:var(--text-dimmer); text-align:center; margin-top:30px; letter-spacing:0.22em; text-transform:uppercase; }
+
+  /* Today match cards — sized to fit ~6-8 matches comfortably */
+  .tmatch { background:var(--bg-card); border-radius:11px; padding:14px 16px; border-left:4px solid var(--atn-teal); flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; }
+  .tmatch.completed { opacity:0.6; border-left-color:var(--text-dimmer); }
+  .tmatch.live { border-left-color:var(--live); background:linear-gradient(90deg, rgba(255,59,48,0.12), var(--bg-card)); box-shadow:0 0 0 1px rgba(255,59,48,0.3); }
+  .tmatch-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+  .tmatch-group { font-family:'Syne',sans-serif; font-weight:700; font-size:12px; color:var(--atn-teal-bright); letter-spacing:0.2em; }
+  .tmatch.live .tmatch-group { color:var(--live); }
+  .tmatch-status { font-family:'Mulish',sans-serif; font-weight:800; font-size:13px; color:var(--text); letter-spacing:0.04em; display:flex; align-items:center; gap:6px; }
+  .tmatch.completed .tmatch-status { color:var(--text-dim); }
+  .tmatch.live .tmatch-status { color:var(--live); }
+  .tmatch-teams { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .tteam { display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+  .tteam.right { justify-content:flex-end; }
+  .tflag { width:42px; height:28px; border-radius:3px; object-fit:cover; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4); }
+  .tflag.placeholder { background:var(--border); }
+  .tcode { font-family:'Syne',sans-serif; font-weight:700; font-size:26px; color:var(--text); letter-spacing:0.04em; }
+  .tcode.placeholder { font-size:14px; letter-spacing:0.04em; color:var(--text-dim); text-transform:uppercase; font-weight:700; }
+  .tvs { font-family:'Mulish',sans-serif; font-weight:700; font-size:14px; color:var(--text-dimmer); letter-spacing:0.24em; }
+  .tscore { font-family:'Syne',sans-serif; font-weight:800; font-size:30px; color:var(--text); letter-spacing:0.04em; }
+  .tmatch.live .tscore { color:var(--live); }
+
+  /* Shame zone variant */
+  .leaderboard.shame .lb-title { color:var(--down); }
+  .leaderboard.shame .lb-row { border-left-color:#5a3535; }
+  .leaderboard.shame .lb-points { color:var(--down); opacity:0.85; }
 
   /* ===== WEEK VIEW (3-day) ===== */
   .days {
@@ -152,14 +188,7 @@
   .other-card .code { font-size:16px; }
   .other-card .score { font-size:20px; }
 
-  /* ===== LEADERBOARD PANEL ===== */
-  .leaderboard {
-    background:var(--bg-elev); border:1px solid var(--border); border-radius:14px;
-    padding:20px 18px 14px; display:flex; flex-direction:column; min-height:0;
-  }
-  .lb-header { display:flex; align-items:baseline; justify-content:space-between; padding-bottom:12px; border-bottom:2px solid var(--border); margin-bottom:14px; flex-shrink:0; }
-  .lb-title { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; letter-spacing:0.18em; color:var(--atn-teal-bright); text-transform:uppercase; }
-  .lb-subtitle { font-family:'Mulish',sans-serif; font-weight:700; font-size:11px; letter-spacing:0.2em; color:var(--text-dim); text-transform:uppercase; }
+  /* ===== LEADERBOARD ROWS ===== */
   .lb-list { display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; }
   .lb-row {
     background:var(--bg-card); border-radius:11px; padding:14px 16px 12px;
@@ -204,16 +233,28 @@
     </header>
 
     <div class="body-grid">
-      <div class="main-content">
-        <div id="content" style="flex:1; display:flex; flex-direction:column; min-height:0;"></div>
-      </div>
-      <aside class="leaderboard">
+      <section class="today-panel">
+        <div class="panel-header">
+          <div class="panel-title" id="today-title">Today</div>
+          <div class="panel-subtitle" id="today-date">&nbsp;</div>
+        </div>
+        <div class="today-list" id="today-list"></div>
+      </section>
+      <aside class="leaderboard top">
         <div class="lb-header">
           <div class="lb-title">Pool · Top 5</div>
           <div class="lb-subtitle" id="lb-count">&nbsp;</div>
         </div>
         <div class="lb-list" id="lb-list"></div>
-        <div class="lb-footer" id="lb-footer">Updates as matches complete</div>
+        <div class="lb-footer">Updates as matches complete</div>
+      </aside>
+      <aside class="leaderboard shame">
+        <div class="lb-header">
+          <div class="lb-title">Shame Zone · Last 5</div>
+          <div class="lb-subtitle">Bottom of pool</div>
+        </div>
+        <div class="lb-list" id="shame-list"></div>
+        <div class="lb-footer">Hang in there</div>
       </aside>
     </div>
 
@@ -686,64 +727,105 @@ function renderOtherCard(m) {
 }
 
 /* =========================================================
-   RENDER: LEADERBOARD
+   RENDER: TODAY PANEL
    ========================================================= */
-function renderLeaderboard() {
+function renderTodayPanel(now, todays) {
+  const list = document.getElementById('today-list');
+  if (!todays || todays.length === 0) {
+    list.innerHTML = '<div class="today-empty">No matches today</div>';
+    return;
+  }
+  // Sort: live first, then upcoming by time, then completed
+  const sorted = todays.slice().sort((a,b)=>{
+    if (a.live && !b.live) return -1;
+    if (!a.live && b.live) return 1;
+    if (a.completed && !b.completed) return 1;
+    if (!a.completed && b.completed) return -1;
+    return a.time.localeCompare(b.time);
+  });
+  let html = '';
+  for (const m of sorted) html += renderTodayCard(m);
+  list.innerHTML = html;
+}
+
+function renderTodayCard(m) {
+  const showScore = (m.aScore != null && m.bScore != null);
+  let statusHtml;
+  if (m.live) statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
+  else if (m.completed) statusHtml = 'FT';
+  else statusHtml = fmtTime12Short(m.time);
+  const teamA = m.placeholder
+    ? '<span class="tcode placeholder">'+m.aName+'</span>'
+    : '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>';
+  const teamB = m.placeholder
+    ? '<span class="tcode placeholder">'+m.bName+'</span>'
+    : '<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
+  const middle = showScore ? '<span class="tscore">'+m.aScore+'–'+m.bScore+'</span>' : '<span class="tvs">VS</span>';
+  const cls = m.live ? ' live' : (m.completed ? ' completed' : '');
+  return '<div class="tmatch'+cls+'">'
+       + '<div class="tmatch-meta"><span class="tmatch-group">'+roundLabel(m)+'</span><span class="tmatch-status">'+statusHtml+'</span></div>'
+       + '<div class="tmatch-teams"><div class="tteam">'+teamA+'</div>'+middle+'<div class="tteam right">'+teamB+'</div></div>'
+       + '</div>';
+}
+
+/* =========================================================
+   RENDER: RANKINGS (Top 5 + Shame Zone)
+   ========================================================= */
+function renderRankings() {
   const today = dateStr(nowDate());
   const currentScores = buildMatchScores(false, null);
   const yesterdayScores = (function(){
-    // Scores from matches strictly BEFORE today
     const out = {};
     for (const n in currentScores) {
-      // Find this match's date
       const m = MATCHES.find(x => x.n === parseInt(n,10));
       if (!m) continue;
       if (m.date < today) out[n] = currentScores[n];
     }
     return out;
   })();
-
   const current = computeRanking(currentScores);
   const yesterday = computeRanking(yesterdayScores);
   const yesterdayIdx = {};
   yesterday.forEach((r,i) => { yesterdayIdx[r.name] = i; });
-
-  const top5 = current.slice(0,5);
   const anyScored = Object.keys(currentScores).length > 0;
+  const N = current.length;
 
-  let html = '';
-  for (let i=0; i<5; i++) {
-    const r = top5[i] || null;
-    const rank = i+1;
-    const cls = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
-    if (!r) {
-      // empty placeholder slot (shouldn't happen with 24 participants)
-      html += '<div class="lb-row '+cls+'"><div class="lb-rank">'+rank+'</div><div class="lb-name">—</div><div class="lb-meta"><span class="lb-pts-label">No data</span></div><div class="lb-points">—</div></div>';
-      continue;
-    }
+  function rowHtml(r, displayRank, currentIdx, isShame) {
+    const cls = !isShame && displayRank===1 ? 'gold'
+              : !isShame && displayRank===2 ? 'silver'
+              : !isShame && displayRank===3 ? 'bronze' : '';
     let trendHtml;
     if (!anyScored) {
       trendHtml = '<span class="lb-trend same">—</span>';
     } else {
       const yIdx = yesterdayIdx[r.name];
-      if (yIdx === undefined) {
-        trendHtml = '<span class="lb-trend same">—</span>';
-      } else {
-        const delta = yIdx - i; // positive = moved up
+      if (yIdx === undefined) trendHtml = '<span class="lb-trend same">—</span>';
+      else {
+        const delta = yIdx - currentIdx;
         if (delta > 0) trendHtml = '<span class="lb-trend up">▲ '+delta+'</span>';
         else if (delta < 0) trendHtml = '<span class="lb-trend down">▼ '+Math.abs(delta)+'</span>';
         else trendHtml = '<span class="lb-trend same">—</span>';
       }
     }
-    html += '<div class="lb-row '+cls+'">'
-         + '<div class="lb-rank">'+rank+'</div>'
+    return '<div class="lb-row '+cls+'">'
+         + '<div class="lb-rank">'+displayRank+'</div>'
          + '<div class="lb-name">'+shortName(r.name)+'</div>'
          + '<div class="lb-points">'+r.points+'</div>'
          + '<div class="lb-meta">'+trendHtml+'<span class="lb-pts-label">pts · '+(T[r.champion]?T[r.champion][0]:r.champion)+'</span></div>'
          + '</div>';
   }
-  document.getElementById('lb-list').innerHTML = html;
-  document.getElementById('lb-count').textContent = PARTICIPANTS.length + ' IN POOL';
+
+  // Top 5
+  let topHtml = '';
+  for (let i=0; i<5 && i<N; i++) topHtml += rowHtml(current[i], i+1, i, false);
+  document.getElementById('lb-list').innerHTML = topHtml;
+  document.getElementById('lb-count').textContent = N + ' IN POOL';
+
+  // Shame zone: bottom 5 in actual rank order (e.g. 20, 21, 22, 23, 24)
+  let shameHtml = '';
+  const start = Math.max(0, N - 5);
+  for (let i=start; i<N; i++) shameHtml += rowHtml(current[i], i+1, i, true);
+  document.getElementById('shame-list').innerHTML = shameHtml;
 }
 
 /* =========================================================
@@ -751,11 +833,9 @@ function renderLeaderboard() {
    ========================================================= */
 async function ensureESPNData() {
   const today = nowDate();
-  // Always refresh today
   espnCache.delete(dateStr(today).replace(/-/g,''));
-  // Fetch tournament range that we care about: June 11 through today+6 days
   const start = new Date('2026-06-11T12:00:00');
-  const end = addDays(today, 7);
+  const end = addDays(today, 2);
   const tasks = [];
   let cur = new Date(start);
   while (cur <= end) {
@@ -767,7 +847,6 @@ async function ensureESPNData() {
 
 async function update() {
   await ensureESPNData();
-
   const now = nowDate();
   const today = dateStr(now);
   const todaysStatic = matchesOn(now);
@@ -775,34 +854,18 @@ async function update() {
   const todaysEnriched = todaysStatic.map(m => enrich(m, todaysEvents));
   const anyLive = todaysEnriched.some(m => m.live);
 
-  let mode;
-  if (FORCE_MODE === 'day') mode = 'day';
-  else if (FORCE_MODE === 'week') mode = 'week';
-  else mode = anyLive ? 'day' : 'week';
+  // Header
+  document.getElementById('section-label').textContent = anyLive ? 'Live Now' : 'Break Room Display';
+  document.getElementById('title').innerHTML = 'FIFA <span class="accent">2026</span>';
+  document.getElementById('subtitle').textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
-  const t = document.getElementById('title');
-  const s = document.getElementById('subtitle');
-  const sec = document.getElementById('section-label');
+  // Today panel header
+  document.getElementById('today-title').textContent = anyLive ? 'Today · Live' : 'Today';
+  document.getElementById('today-date').textContent = now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
 
-  if (mode === 'day') {
-    sec.textContent = 'Live Now';
-    t.innerHTML = 'Match<span class="accent">day</span>';
-    s.textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    document.getElementById('content').innerHTML = renderDayView(now, todaysEnriched);
-  } else {
-    sec.textContent = 'Next 3 Days';
-    t.innerHTML = 'FIFA <span class="accent">2026</span>';
-    const last = addDays(now, 2);
-    s.textContent = fmtDate(now) + ' – ' + fmtDate(last);
-    const enrichedByDate = {};
-    for (const key of espnCache.keys()) {
-      const iso = key.slice(0,4)+'-'+key.slice(4,6)+'-'+key.slice(6,8);
-      enrichedByDate[iso] = espnCache.get(key);
-    }
-    document.getElementById('content').innerHTML = renderWeekView(now, enrichedByDate);
-  }
-
-  renderLeaderboard();
+  // Render
+  renderTodayPanel(now, todaysEnriched);
+  renderRankings();
 }
 /* =========================================================
    SCALING + REFRESH
