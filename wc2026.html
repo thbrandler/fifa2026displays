@@ -773,7 +773,7 @@ function renderTodayCard(m) {
    ========================================================= */
 function renderRankings() {
   const today = dateStr(nowDate());
-  const currentScores = buildMatchScores(false, null);
+  const currentScores = buildMatchScores(true, null);
   const yesterdayScores = (function(){
     const out = {};
     for (const n in currentScores) {
