@@ -190,13 +190,16 @@
 
   /* ===== LEADERBOARD ROWS ===== */
   .lb-list { display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; }
+  .leaderboard.top .lb-list { overflow:hidden; }
   .lb-row {
     background:var(--bg-card); border-radius:11px; padding:14px 16px 12px;
     border-left:4px solid var(--atn-teal);
     display:grid; grid-template-columns:48px 1fr auto; grid-template-rows:auto auto;
     gap:2px 14px; align-items:center;
-    flex:1; min-height:0;
+    min-height:0;
   }
+  .leaderboard.top .lb-row { flex:0 0 auto; min-height:92px; }
+  .leaderboard.shame .lb-row { flex:1; }
   .lb-row.gold { border-left-color:var(--gold); }
   .lb-row.silver { border-left-color:var(--silver); }
   .lb-row.bronze { border-left-color:var(--bronze); }
@@ -215,6 +218,53 @@
   .lb-trend.new { color:var(--atn-teal-bright); background:rgba(0,212,179,0.14); }
   .lb-champ { font-family:'Mulish',sans-serif; font-weight:700; font-size:10px; letter-spacing:0.1em; color:var(--text-dim); }
   .lb-footer { padding-top:10px; margin-top:10px; border-top:1px solid var(--border); font-family:'Mulish',sans-serif; font-weight:700; font-size:11px; letter-spacing:0.2em; color:var(--text-dimmer); text-transform:uppercase; text-align:center; flex-shrink:0; }
+
+  /* ===== PHONE / NARROW VIEWPORT ===== */
+  @media (max-width: 1023px), (orientation: portrait) and (max-width: 1366px) {
+    html, body { overflow-y:auto; height:auto; }
+    .viewport { position:static; overflow:visible; height:auto; min-height:100vh; inset:auto; }
+    .stage {
+      position:static !important; width:100% !important; height:auto !important;
+      max-width:100%; transform:none !important;
+      padding:18px 14px 24px; display:block;
+    }
+    .stage::before, .stage::after { display:none; }
+
+    header { flex-direction:column; align-items:flex-start; gap:12px; padding-bottom:14px; }
+    .title-block { text-align:left; }
+    .atn-mark { font-size:30px; }
+    .title { font-size:38px; }
+    .subtitle { font-size:12px; margin-top:6px; }
+    .section-label { font-size:11px; }
+
+    .body-grid {
+      display:flex; flex-direction:column; gap:14px; margin-top:16px;
+    }
+    .today-panel, .leaderboard { padding:16px 14px 12px; }
+    .panel-title, .lb-title { font-size:17px; letter-spacing:0.16em; }
+    .panel-subtitle, .lb-subtitle { font-size:10px; }
+
+    /* On mobile, top panel expands naturally — no auto-scroll */
+    .leaderboard.top .lb-list { overflow:visible; }
+    .leaderboard.top .lb-row { min-height:auto; }
+    .lb-row { padding:12px 14px 10px; }
+    .lb-rank { font-size:34px; }
+    .lb-name { font-size:17px; }
+    .lb-points { font-size:28px; }
+    .lb-pts-label { font-size:9px; }
+
+    /* Today match cards — slimmer for narrow screens */
+    .tmatch { padding:12px 14px; flex:0 0 auto; }
+    .tflag { width:32px; height:22px; }
+    .tcode { font-size:22px; }
+    .tscore { font-size:24px; }
+    .tvs { font-size:12px; }
+    .tmatch-group { font-size:11px; }
+    .tmatch-status { font-size:12px; }
+
+    footer { flex-direction:column; gap:6px; align-items:flex-start; padding-top:12px; margin-top:14px; }
+    .footer-tag, .footer-meta { font-size:10px; letter-spacing:0.18em; }
+  }
 </style>
 </head>
 <body>
@@ -242,7 +292,7 @@
       </section>
       <aside class="leaderboard top">
         <div class="lb-header">
-          <div class="lb-title">Pool · Top 5</div>
+          <div class="lb-title">Pool · Standings</div>
           <div class="lb-subtitle" id="lb-count">&nbsp;</div>
         </div>
         <div class="lb-list" id="lb-list"></div>
@@ -815,13 +865,14 @@ function renderRankings() {
          + '</div>';
   }
 
-  // Top 5
+  // Top: positions 1 through N-5 (everyone above the shame zone)
   let topHtml = '';
-  for (let i=0; i<5 && i<N; i++) topHtml += rowHtml(current[i], i+1, i, false);
+  const topLimit = Math.max(0, N - 5);
+  for (let i=0; i<topLimit; i++) topHtml += rowHtml(current[i], i+1, i, false);
   document.getElementById('lb-list').innerHTML = topHtml;
   document.getElementById('lb-count').textContent = N + ' IN POOL';
 
-  // Shame zone: bottom 5 in actual rank order (e.g. 20, 21, 22, 23, 24)
+  // Shame zone: bottom 5 in actual rank order
   let shameHtml = '';
   const start = Math.max(0, N - 5);
   for (let i=start; i<N; i++) shameHtml += rowHtml(current[i], i+1, i, true);
@@ -871,7 +922,14 @@ async function update() {
    SCALING + REFRESH
    ========================================================= */
 const stage = document.querySelector('.stage');
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 1023px), (orientation: portrait) and (max-width: 1366px)').matches;
+}
 function fit() {
+  if (isMobileViewport()) {
+    stage.style.transform = '';
+    return;
+  }
   const vw = document.documentElement.clientWidth || window.innerWidth;
   const vh = document.documentElement.clientHeight || window.innerHeight;
   const s = Math.min(vw/1920, vh/1080) * 0.9;
@@ -882,6 +940,32 @@ fit();
 window.addEventListener('resize', fit);
 if (window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
 setInterval(fit, 5000);
+
+/* =========================================================
+   AUTO-SCROLL: cycle the standings column on TV/desktop
+   ========================================================= */
+const SCROLL_CYCLE_MS = 32000;  // full down-and-back cycle
+const SCROLL_PAUSE_MS = 4500;   // dwell at top and bottom
+function autoScrollStep(now) {
+  const el = document.getElementById('lb-list');
+  if (el && !isMobileViewport()) {
+    const max = el.scrollHeight - el.clientHeight;
+    if (max > 0) {
+      const t = now % SCROLL_CYCLE_MS;
+      const halfScroll = (SCROLL_CYCLE_MS - 2*SCROLL_PAUSE_MS) / 2;
+      let pos;
+      if (t < SCROLL_PAUSE_MS) pos = 0;
+      else if (t < SCROLL_PAUSE_MS + halfScroll) pos = max * (t - SCROLL_PAUSE_MS) / halfScroll;
+      else if (t < SCROLL_PAUSE_MS + halfScroll + SCROLL_PAUSE_MS) pos = max;
+      else pos = max * (1 - (t - 2*SCROLL_PAUSE_MS - halfScroll) / halfScroll);
+      el.scrollTop = pos;
+    } else {
+      el.scrollTop = 0;
+    }
+  }
+  requestAnimationFrame(autoScrollStep);
+}
+requestAnimationFrame(autoScrollStep);
 
 // Initial render
 update();
