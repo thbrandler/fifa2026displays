@@ -307,6 +307,51 @@
   .pred-row .pts-badge.gold { background:rgba(245,197,66,0.20); color:var(--gold); }
   .pred-row .pts-badge.green { background:rgba(107,207,127,0.20); color:#6bcf7f; }
 
+  /* ===== OUTLIER CALLOUTS ON TODAY CARDS ===== */
+  .tmatch-outliers {
+    margin-top:10px; padding-top:9px;
+    border-top:1px dashed var(--border);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .tmatch-outlier {
+    font-family:'Mulish',sans-serif; font-weight:700;
+    font-size:12px; letter-spacing:0.02em;
+    color:var(--atn-teal-bright);
+    text-align:center;
+  }
+  .tmatch-outlier .outlier-name { color:var(--text); }
+  .tmatch-outlier .outlier-pick { font-family:'Syne',sans-serif; font-weight:800; letter-spacing:0.06em; }
+
+  /* ===== CHAMPION PICK STRIP ===== */
+  .champ-strip {
+    margin-top:14px; padding:12px 18px;
+    background:var(--bg-elev); border:1px solid var(--border);
+    border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .champ-strip-label {
+    font-family:'Syne',sans-serif; font-weight:800;
+    font-size:12px; letter-spacing:0.22em;
+    color:var(--atn-teal-bright);
+    text-transform:uppercase; white-space:nowrap; flex-shrink:0;
+  }
+  .champ-pills {
+    display:flex; flex-wrap:wrap; gap:9px; flex:1;
+  }
+  .champ-pill {
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:18px; padding:5px 12px 5px 5px;
+    display:flex; align-items:center; gap:8px;
+    cursor:pointer; transition:filter .15s ease;
+  }
+  .champ-pill:hover { filter:brightness(1.18); }
+  .champ-pill img { width:22px; height:15px; border-radius:2px; flex-shrink:0; }
+  .champ-pill-name { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:var(--text); letter-spacing:0.04em; }
+  .champ-pill-count { font-family:'Mulish',sans-serif; font-weight:800; font-size:12px; color:var(--atn-teal-bright); }
+  .champ-pill.eliminated { opacity:0.35; }
+  .champ-pill.eliminated .champ-pill-name { text-decoration:line-through; }
+  .champ-pill.eliminated .champ-pill-count { color:var(--text-dimmer); }
+
   /* ===== PHONE / NARROW VIEWPORT ===== */
   @media (max-width: 1023px), (orientation: portrait) and (max-width: 1366px) {
     html, body { overflow-y:auto; height:auto; }
@@ -366,6 +411,15 @@
     .pred-row { grid-template-columns:28px 1fr 54px 78px; font-size:12px; padding:8px 10px; }
     .pred-row .pred-bet { font-size:13px; }
     .cat-row { font-size:13px; padding:8px 12px; }
+
+    /* Outlier + champ strip on phone */
+    .tmatch-outlier { font-size:11px; }
+    .champ-strip { padding:12px 14px; gap:10px; }
+    .champ-strip-label { font-size:11px; letter-spacing:0.18em; width:100%; text-align:center; margin-bottom:4px; }
+    .champ-pill { padding:4px 10px 4px 4px; }
+    .champ-pill img { width:18px; height:12px; }
+    .champ-pill-name { font-size:11px; }
+    .champ-pill-count { font-size:11px; }
   }
 </style>
 </head>
@@ -409,6 +463,8 @@
         <div class="lb-footer">Hang in there</div>
       </aside>
     </div>
+
+    <div class="champ-strip" id="champ-strip"></div>
 
     <footer>
       <div class="footer-tag" id="footer-tag">FIFA World Cup 26™</div>
@@ -921,10 +977,49 @@ function renderTodayCard(m) {
   const middle = showScore ? '<span class="tscore">'+m.aScore+'–'+m.bScore+'</span>' : '<span class="tvs">VS</span>';
   const cls = m.live ? ' live' : (m.completed ? ' completed' : '');
   const clickAttr = m.placeholder ? '' : ' onclick="showGameModal('+m.n+')"';
+
+  // Outlier callouts — only show for upcoming (not started, not completed) matches
+  let outlierHtml = '';
+  if (!m.completed && !m.live && !m.placeholder) {
+    const outliers = findOutliers(m.n, m);
+    if (outliers.length > 0) {
+      outlierHtml = '<div class="tmatch-outliers">';
+      for (const o of outliers) {
+        outlierHtml += '<div class="tmatch-outlier">🦅 <span class="outlier-name">'
+          + htmlEscape(shortName(o.name))
+          + '</span> is the only one picking <span class="outlier-pick">'
+          + o.pickLabel + '</span></div>';
+      }
+      outlierHtml += '</div>';
+    }
+  }
+
   return '<div class="tmatch'+cls+'"'+clickAttr+'>'
        + '<div class="tmatch-meta"><span class="tmatch-group">'+roundLabel(m)+'</span><span class="tmatch-status">'+statusHtml+'</span></div>'
        + '<div class="tmatch-teams"><div class="tteam">'+teamA+'</div>'+middle+'<div class="tteam right">'+teamB+'</div></div>'
+       + outlierHtml
        + '</div>';
+}
+
+/* =========================================================
+   OUTLIER DETECTION
+   ========================================================= */
+function findOutliers(matchN, match) {
+  if (!matchN || matchN < 1 || matchN > 72) return [];
+  const buckets = { home: [], draw: [], away: [] };
+  for (const arr of PARTICIPANTS) {
+    const pA = arr[2 + (matchN-1)*2];
+    const pB = arr[2 + (matchN-1)*2 + 1];
+    if (pA == null || pB == null) continue;
+    if (pA === pB) buckets.draw.push(arr[0]);
+    else if (pA > pB) buckets.home.push(arr[0]);
+    else buckets.away.push(arr[0]);
+  }
+  const out = [];
+  if (buckets.home.length === 1) out.push({ name: buckets.home[0], pickLabel: match.aCode + ' to win' });
+  if (buckets.draw.length === 1) out.push({ name: buckets.draw[0], pickLabel: 'a draw' });
+  if (buckets.away.length === 1) out.push({ name: buckets.away[0], pickLabel: match.bCode + ' to win' });
+  return out;
 }
 
 /* =========================================================
@@ -1030,6 +1125,7 @@ async function update() {
   // Render
   renderTodayPanel(now, todaysEnriched);
   renderRankings();
+  renderChampionStrip();
 }
 /* =========================================================
    MODAL: Person view + Game view
@@ -1201,6 +1297,102 @@ document.getElementById('modal').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeModal();
 });
+
+/* =========================================================
+   CHAMPION PICK SURVIVAL TRACKER
+   ========================================================= */
+function isTeamEliminated(teamCode) {
+  // A team is eliminated if it lost a knockout match.
+  // (Group-stage elimination not implemented — requires MD3-complete standings calc.)
+  const KO_START = '2026-06-28';
+  for (const [dateKey, events] of espnCache) {
+    if (!events) continue;
+    const date = dateKey.slice(0,4)+'-'+dateKey.slice(4,6)+'-'+dateKey.slice(6,8);
+    if (date < KO_START) continue;
+    for (const ev of events) {
+      const comp = ev.competitions && ev.competitions[0];
+      if (!comp) continue;
+      const state = comp.status && comp.status.type && comp.status.type.state;
+      if (state !== 'post') continue;
+      const teams = comp.competitors || [];
+      if (teams.length !== 2) continue;
+      const codes = teams.map(t => teamToCode(t.team));
+      if (!codes.includes(teamCode)) continue;
+      // Determine loser
+      const winner = teams.find(t => t.winner === true);
+      if (winner) {
+        if (teamToCode(winner.team) !== teamCode) return true;
+        continue;
+      }
+      const me = teams.find(t => teamToCode(t.team) === teamCode);
+      const them = teams.find(t => teamToCode(t.team) !== teamCode);
+      const mine = parseInt(me.score, 10);
+      const theirs = parseInt(them.score, 10);
+      if (!isNaN(mine) && !isNaN(theirs) && theirs > mine) return true;
+    }
+  }
+  return false;
+}
+
+function renderChampionStrip() {
+  // Group participants by their champion pick
+  const byChamp = {};
+  for (const arr of PARTICIPANTS) {
+    const code = arr[1];
+    if (!byChamp[code]) byChamp[code] = [];
+    byChamp[code].push(arr[0]);
+  }
+  // Sort entries by count desc, then alphabetically by country name
+  const entries = Object.entries(byChamp).sort((a,b) => {
+    if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+    const nameA = T[a[0]] ? T[a[0]][0] : a[0];
+    const nameB = T[b[0]] ? T[b[0]][0] : b[0];
+    return nameA.localeCompare(nameB);
+  });
+
+  let html = '<div class="champ-strip-label">Champion Picks</div><div class="champ-pills">';
+  for (const [code, names] of entries) {
+    const country = T[code] ? T[code][0] : code;
+    const flag = T[code] ? T[code][1] : '';
+    const eliminated = isTeamEliminated(code);
+    const cls = eliminated ? ' eliminated' : '';
+    html += '<div class="champ-pill' + cls + '" onclick="showChampionModal(\'' + code + '\')">'
+      + (flag ? '<img src="https://flagcdn.com/w40/' + flag + '.png" alt="">' : '')
+      + '<span class="champ-pill-name">' + code + '</span>'
+      + '<span class="champ-pill-count">' + names.length + '</span>'
+      + '</div>';
+  }
+  html += '</div>';
+  document.getElementById('champ-strip').innerHTML = html;
+}
+
+function showChampionModal(champCode) {
+  const country = T[champCode] ? T[champCode][0] : champCode;
+  const flag = T[champCode] ? T[champCode][1] : '';
+  const picks = PARTICIPANTS.filter(p => p[1] === champCode).map(p => p[0]);
+  const eliminated = isTeamEliminated(champCode);
+
+  let html = '<div class="modal-teams">';
+  if (flag) html += '<img class="modal-flag" src="https://flagcdn.com/w160/' + flag + '.png" alt="">';
+  html += '<span class="modal-code">' + champCode + '</span>';
+  html += '</div>';
+  html += '<div class="modal-status' + (eliminated ? '' : '') + '">'
+    + picks.length + ' picked ' + htmlEscape(country) + ' to win it all'
+    + (eliminated ? ' · ELIMINATED' : '')
+    + '</div>';
+  html += '<div class="cat-list">';
+  for (const n of picks) {
+    html += '<div class="cat-row"><span class="person">' + htmlEscape(n) + '</span></div>';
+  }
+  html += '</div>';
+
+  document.getElementById('modal-header').innerHTML =
+    '<div><div class="modal-title">Champion Pick · ' + htmlEscape(country) + '</div>'
+    + '<div class="modal-subtitle">Picks to win the tournament</div></div>'
+    + '<button class="modal-close" onclick="closeModal()">×</button>';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').style.display = 'flex';
+}
 
 /* =========================================================
    SCALING + REFRESH
