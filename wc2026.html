@@ -322,6 +322,16 @@
   .tmatch-outlier .outlier-name { color:var(--text); }
   .tmatch-outlier .outlier-pick { font-family:'Syne',sans-serif; font-weight:800; letter-spacing:0.06em; }
 
+  /* ===== KEVIN WATCH ===== */
+  .kevin-callout {
+    margin-top:10px; padding-top:9px;
+    border-top:1px dashed rgba(255,140,140,0.35);
+    font-family:'Mulish',sans-serif; font-style:italic; font-weight:700;
+    font-size:11px; letter-spacing:0.02em;
+    color:#ff8c8c; text-align:center; line-height:1.4;
+  }
+  .kevin-callout .kevin-pts { font-style:normal; background:rgba(255,140,140,0.18); color:#ff8c8c; padding:1px 6px; border-radius:4px; font-weight:800; font-size:10px; margin-left:4px; }
+
   /* ===== CHAMPION PICK STRIP ===== */
   .champ-strip {
     margin-top:14px; padding:12px 18px;
@@ -414,6 +424,7 @@
 
     /* Outlier + champ strip on phone */
     .tmatch-outlier { font-size:11px; }
+    .kevin-callout { font-size:10px; }
     .champ-strip { padding:12px 14px; gap:10px; }
     .champ-strip-label { font-size:11px; letter-spacing:0.18em; width:100%; text-align:center; margin-bottom:4px; }
     .champ-pill { padding:4px 10px 4px 4px; }
@@ -652,6 +663,7 @@ const PARTICIPANTS = [
   ['Veronica Vera','ESP',2,1,2,1,1,0,3,1,1,3,1,0,1,2,1,1,3,0,1,1,2,2,2,0,3,0,2,1,0,2,1,0,2,0,0,2,3,1,2,0,3,1,2,1,2,1,0,3,0,1,2,1,3,1,2,1,1,1,1,0,3,0,3,1,2,2,3,0,2,1,1,2,3,1,2,0,3,0,0,1,2,1,3,0,2,1,2,0,4,0,3,1,0,1,3,1,2,1,1,1,1,3,2,0,1,2,1,2,1,3,0,2,2,2,0,3,2,3,1,1,1,3,2,0,0,1,1,2,1,1,0,3,1,3,1,1,2,1,1,1,1,2,0,4],
   ['Pedro Arvizu','POR',7,0,1,3,3,2,4,0,4,3,1,2,0,1,2,1,3,1,2,1,1,0,0,5,7,0,0,0,0,2,2,0,2,0,3,1,5,0,3,0,1,0,2,1,2,1,0,0,0,0,1,0,1,2,1,1,0,4,3,0,3,0,2,1,3,0,4,0,2,2,1,1,3,1,2,1,1,0,2,2,3,1,0,0,4,3,1,1,3,1,1,1,2,1,2,0,0,0,0,2,0,2,3,0,0,1,0,2,0,3,0,2,2,0,0,3,1,0,0,2,1,6,2,0,2,0,2,2,0,2,0,4,1,2,0,2,1,1,0,2,1,3,1,3],
   ['Alvaro Estrada Castillo','ESP',1,0,2,0,2,0,2,1,0,2,2,1,0,2,1,1,2,0,1,2,2,1,2,1,3,0,2,0,1,2,1,1,3,1,0,2,4,0,3,0,4,0,1,2,1,0,0,2,2,1,2,0,2,1,2,1,0,1,2,0,5,0,1,2,3,0,2,1,2,0,0,2,3,0,2,0,2,0,1,0,3,0,6,0,2,1,1,1,3,0,2,1,0,2,3,0,1,1,1,1,1,3,3,0,0,2,0,1,0,2,0,2,2,0,0,3,1,2,0,1,1,3,2,0,1,2,1,3,1,0,0,2,0,2,2,1,1,2,0,1,0,2,0,4],
+  ['Claude','ARG',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2,0,2,1,1,1,0,2,1,1,2,0,2,1,1,1,1,2,2,1,3,0,2,1,2,1,2,1,3,0,0,2,2,0,2,1,2,0,1,2,2,0,3,0,2,1,0,2,3,0,2,1,0,2,2,0,1,1,2,1,1,2,2,0,0,2,0,1,1,2,0,3,1,1,1,2,1,2,1,1,1,2,2,0,1,1,1,2,1,1,0,3,0,3,2,0,1,1,1,1,1,1,0,3],
 ];
 
 // Scoring rules
@@ -994,11 +1006,71 @@ function renderTodayCard(m) {
     }
   }
 
+  // Kevin Watch — for live/completed matches where Kevin's prediction is suspicious
+  let kevinHtml = '';
+  if ((m.live || m.completed) && !m.placeholder) {
+    kevinHtml = getKevinCallout(m.n);
+  }
+
   return '<div class="tmatch'+cls+'"'+clickAttr+'>'
        + '<div class="tmatch-meta"><span class="tmatch-group">'+roundLabel(m)+'</span><span class="tmatch-status">'+statusHtml+'</span></div>'
        + '<div class="tmatch-teams"><div class="tteam">'+teamA+'</div>'+middle+'<div class="tteam right">'+teamB+'</div></div>'
        + outlierHtml
+       + kevinHtml
        + '</div>';
+}
+
+/* =========================================================
+   KEVIN WATCH — out the ChatGPT cheater
+   ========================================================= */
+const KEVIN_NAME = 'Kevin Hernandez';
+const KEVIN_EXACT_PHRASES = [
+  "🤖 Kevin H. predicted this <em>exactly</em>. Suspicious for a 'human'.",
+  "🕵️ Kevin H. nailed it. Funny how that keeps happening.",
+  "🚨 Kevin H. with the exact score. ChatGPT subscription paying off, huh?",
+  "👀 Kevin H. called the exact result. Pure footballing instinct, surely.",
+  "🧠 Kevin H. — exact score. Powered by intuition. Definitely.",
+  "📊 Kevin H. landed the bullseye. Hmm.",
+  "🤔 Kevin H. predicted this perfectly. Normal human stuff.",
+  "🎯 Kevin H. spot on. The 'I just watch a lot of football' defense holds up.",
+  "💸 Kevin H. — exact score. $20/mo for ChatGPT Plus paying for itself.",
+  "📡 Kevin H. nailed it. Direct line to OpenAI must be lightning fast today.",
+  "🚩 Kevin H. with the bullseye. Red flag #∞.",
+  "🧾 Kevin H. — exact score. Asking for a friend: where do you keep the receipts?",
+  "🔮 Kevin H. perfectly predicted this. The crystal ball doubles as a chatbot, apparently.",
+  "⚠️ Kevin H. another exact. We're keeping a tally. (It's not human-shaped.)",
+  "🐀 Kevin H. — exact score. We see you.",
+];
+const KEVIN_DRAW_PHRASES = [
+  "🤖 Kevin H. called the draw. Coincidence?",
+  "🕵️ Kevin H. saw this stalemate coming. Or did 'he'?",
+  "👀 Kevin H. — correct draw. Lucky guess #47.",
+  "🚩 Kevin H. predicted the draw. Detected: AI assistance.",
+  "📡 Kevin H. — correct draw. Latency on the OpenAI API must be down today.",
+  "🔮 Kevin H. predicted the stalemate. Or 'predicted'.",
+];
+
+function getKevinCallout(matchN) {
+  const kevin = PARTICIPANTS.find(p => p[0] === KEVIN_NAME);
+  if (!kevin) return '';
+  const actualScores = buildMatchScores(true, null);
+  const actual = actualScores[matchN];
+  if (!actual) return '';
+  const pA = kevin[2 + (matchN-1)*2];
+  const pB = kevin[2 + (matchN-1)*2 + 1];
+  if (pA == null || pB == null) return '';
+  const pts = scoreMatch(pA, pB, actual[0], actual[1]);
+  let phrase, badge;
+  if (pts === 5) {
+    phrase = KEVIN_EXACT_PHRASES[matchN % KEVIN_EXACT_PHRASES.length];
+    badge = '<span class="kevin-pts">+5</span>';
+  } else if (pts === 3) {
+    phrase = KEVIN_DRAW_PHRASES[matchN % KEVIN_DRAW_PHRASES.length];
+    badge = '<span class="kevin-pts">+3</span>';
+  } else {
+    return '';
+  }
+  return '<div class="kevin-callout">' + phrase + badge + '</div>';
 }
 
 /* =========================================================
