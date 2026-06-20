@@ -307,6 +307,19 @@
   .pred-row .pts-badge.gold { background:rgba(245,197,66,0.20); color:var(--gold); }
   .pred-row .pts-badge.green { background:rgba(107,207,127,0.20); color:#6bcf7f; }
 
+  /* ===== ROW POKES (movement / shame-zone / Todd) ===== */
+  .lb-poke {
+    grid-column:1 / -1;
+    font-family:'Mulish',sans-serif; font-style:italic; font-weight:700;
+    font-size:11px; color:#ffa54a; letter-spacing:0.02em;
+    margin-top:6px; padding-top:6px;
+    border-top:1px dashed rgba(255,165,74,0.25);
+    line-height:1.35;
+  }
+  .lb-poke.todd { color:#ffd166; }
+  .lb-poke.into-shame { color:#ff7a7a; }
+  .lb-poke.out-shame { color:#7fe3a9; }
+
   /* ===== OUTLIER CALLOUTS ON TODAY CARDS ===== */
   .tmatch-outliers {
     margin-top:10px; padding-top:9px;
@@ -425,6 +438,7 @@
     /* Outlier + champ strip on phone */
     .tmatch-outlier { font-size:11px; }
     .kevin-callout { font-size:10px; }
+    .lb-poke { font-size:10px; margin-top:4px; padding-top:4px; }
     .champ-strip { padding:12px 14px; gap:10px; }
     .champ-strip-label { font-size:11px; letter-spacing:0.18em; width:100%; text-align:center; margin-bottom:4px; }
     .champ-pill { padding:4px 10px 4px 4px; }
@@ -1115,6 +1129,81 @@ function findOutliers(matchN, match) {
 /* =========================================================
    RENDER: RANKINGS (Top 5 + Shame Zone)
    ========================================================= */
+/* =========================================================
+   ROW POKES — shame zone crossings, brink, Todd-specific
+   ========================================================= */
+const POKE_BRINK = [
+  "🪨 {name} sits at the edge of the shame zone. One bad pick away from the abyss.",
+  "🚨 {name} is one slip-up from joining the shame zone. The cliff is right there.",
+  "🧗 {name} clinging to rank {rank} with chalk-dusted fingers.",
+  "⚠️ {name} at the gates of shame. Brave footballing required.",
+  "🪂 {name} is one match away from a free fall.",
+  "👀 {name} on the cliff edge. Don't look down.",
+  "🌊 The shame zone tide is rising. {name}, get on a higher rock.",
+  "🎢 {name}: hanging on by a fingernail. The shame zone is calling.",
+];
+const POKE_INTO_SHAME = [
+  "💀 Welcome to the shame zone, {name}. Population: you (and 4 others).",
+  "🪦 {name} has officially joined the shame zone. Please collect your pity card on the way in.",
+  "📨 RSVP confirmed: {name} accepted the shame zone invitation.",
+  "🚨 BREAKING: {name} has been demoted to the shame zone. Effective immediately.",
+  "🎭 {name} sliding into the shame zone like it's their natural habitat.",
+  "🪜 {name} just took the elevator down to shame-zone level. Ground floor: regret.",
+  "🚪 The shame zone bouncer just waved {name} in. No cover charge for the disgraced.",
+  "📉 {name} has descended into the shame zone. It's warm down here at least.",
+];
+const POKE_OUT_SHAME = [
+  "🚀 {name} escapes the shame zone! Freedom tastes sweet.",
+  "🦅 {name} flies clear of the shame zone. The cage door is open.",
+  "✨ {name} has been released from the shame zone on good behavior.",
+  "🪜 {name} climbs out of the shame zone. Therapy bills paid in full.",
+  "🎉 {name} graduated from the shame zone. Diploma in mediocrity, awarded.",
+  "📈 {name} crawls out of the shame zone, blinking at the daylight.",
+  "🚨 The shame zone is short one resident: {name} just bailed out.",
+  "🏃 {name} sprints out of the shame zone. Don't look back.",
+];
+const TODD_POKES = [
+  "🏈 Todd remembers: this game uses feet. Not helmets.",
+  "🏆 Defending pool champ Todd, currently learning that title defenses are hard.",
+  "🍀 Todd's title-winning luck has expired. The receipt is gone.",
+  "🤔 Todd. Footballer. Allegedly. Bracket says otherwise.",
+  "📉 The Todd Curse: defending pool champs always finish in the basement.",
+  "🏈 Todd accidentally typed 'field goal' into his predictions. Worth 0 pts.",
+  "🎰 Todd's title-defense jackpot energy has officially left the building.",
+  "🧙 Todd's football wizardry doesn't translate. Different sport, different magic.",
+  "🏟️ Todd still looking for the touchdown line. It's not there, buddy.",
+  "📊 Todd, footballer extraordinaire, currently outranked by people who can't name 4 EPL teams.",
+  "🎲 Lightning struck Todd once. Lightning is selective.",
+  "🏈 Todd's grasping at the bracket like it's the Super Bowl playbook. Wrong sport.",
+];
+const TODD_NAME = 'Todd France';
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// Returns {html, cls} for a row poke, or null if no poke applies.
+// Priority: into-shame > out-shame > brink > Todd-general.
+function getRowPoke(name, currentIdx, yIdx, N, anyScored) {
+  if (!anyScored) return null;
+  const inShame = currentIdx >= N - 5;
+  const wasAbove = yIdx !== undefined && yIdx < N - 5;
+  const wasInShame = yIdx !== undefined && yIdx >= N - 5;
+  const shortNm = shortName(name);
+  function fill(arr, cls) {
+    const phrase = pickRandom(arr)
+      .replace(/\{name\}/g, htmlEscape(shortNm))
+      .replace(/\{rank\}/g, currentIdx + 1);
+    return { html: phrase, cls };
+  }
+  if (inShame && wasAbove) return fill(POKE_INTO_SHAME, 'into-shame');
+  if (!inShame && wasInShame) return fill(POKE_OUT_SHAME, 'out-shame');
+  if (currentIdx === N - 6) return fill(POKE_BRINK, '');
+  if (name === TODD_NAME && currentIdx > Math.floor(N / 2)) return fill(TODD_POKES, 'todd');
+  return null;
+}
+
+/* =========================================================
+   LEADERBOARD RENDERING
+   ========================================================= */
 function renderRankings() {
   const today = dateStr(nowDate());
   const currentScores = buildMatchScores(true, null);
@@ -1152,11 +1241,14 @@ function renderRankings() {
       }
     }
     const nameEsc = r.name.replace(/'/g, "\\'");
+    const poke = getRowPoke(r.name, currentIdx, yesterdayIdx[r.name], N, anyScored);
+    const pokeHtml = poke ? '<div class="lb-poke '+poke.cls+'">'+poke.html+'</div>' : '';
     return '<div class="lb-row '+cls+'" onclick="showPersonModal(\''+nameEsc+'\')">'
          + '<div class="lb-rank">'+displayRank+'</div>'
          + '<div class="lb-name">'+shortName(r.name)+'</div>'
          + '<div class="lb-points">'+r.points+'</div>'
          + '<div class="lb-meta">'+trendHtml+'<span class="lb-pts-label">pts · '+(T[r.champion]?T[r.champion][0]:r.champion)+'</span></div>'
+         + pokeHtml
          + '</div>';
   }
 
