@@ -1260,17 +1260,29 @@ const TODD_POKES = [
 const TODD_NAME = 'Todd France';
 
 function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function stringHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h) + s.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+function pickStable(arr, seed) { return arr[stringHash(String(seed)) % arr.length]; }
 
 // Returns {html, cls} for a row poke, or null if no poke applies.
 // Priority: into-shame > out-shame > brink > Todd-general.
-function getRowPoke(name, currentIdx, yIdx, N, anyScored) {
+// Phrase choice is stable for a given (name, rank, points) — only changes
+// when the underlying standing actually moves.
+function getRowPoke(name, currentIdx, yIdx, N, anyScored, points) {
   if (!anyScored) return null;
   const inShame = currentIdx >= N - 5;
   const wasAbove = yIdx !== undefined && yIdx < N - 5;
   const wasInShame = yIdx !== undefined && yIdx >= N - 5;
   const shortNm = shortName(name);
+  const seed = name + '|' + currentIdx + '|' + points;
   function fill(arr, cls) {
-    const phrase = pickRandom(arr)
+    const phrase = pickStable(arr, seed)
       .replace(/\{name\}/g, htmlEscape(shortNm))
       .replace(/\{rank\}/g, currentIdx + 1);
     return { html: phrase, cls };
@@ -1322,7 +1334,7 @@ function renderRankings() {
       }
     }
     const nameEsc = r.name.replace(/'/g, "\\'");
-    const poke = getRowPoke(r.name, currentIdx, yesterdayIdx[r.name], N, anyScored);
+    const poke = getRowPoke(r.name, currentIdx, yesterdayIdx[r.name], N, anyScored, r.points);
     const pokeHtml = poke ? '<div class="lb-poke '+poke.cls+'">'+poke.html+'</div>' : '';
     return '<div class="lb-row '+cls+'" onclick="showPersonModal(\''+nameEsc+'\')">'
          + '<div class="lb-rank">'+displayRank+'</div>'
