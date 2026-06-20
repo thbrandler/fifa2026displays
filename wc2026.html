@@ -798,6 +798,21 @@ function scoreMatch(predA, predB, actA, actB) {
   return (predWinA===actWinA) ? PTS_WIN : 0;
 }
 
+// Get merged events from yesterday + given date + tomorrow.
+// Handles ESPN bucketing midnight-ET kickoffs under the venue's local date,
+// which can be the previous or next calendar day.
+function eventsNearDate(dateStrYMD) {
+  const d = new Date(dateStrYMD + 'T12:00:00');
+  const yest = new Date(d); yest.setDate(yest.getDate() - 1);
+  const tmrw = new Date(d); tmrw.setDate(tmrw.getDate() + 1);
+  const k = s => s.replace(/-/g,'');
+  return [
+    ...(espnCache.get(k(yest.toISOString().slice(0,10))) || []),
+    ...(espnCache.get(k(dateStrYMD)) || []),
+    ...(espnCache.get(k(tmrw.toISOString().slice(0,10))) || []),
+  ];
+}
+
 // Build {matchNum -> [scoreA, scoreB]} from ESPN cache.
 // includeLive: if true, include in-progress scores; else only completed.
 // uptoDate: if set (YYYY-MM-DD), only matches with date <= uptoDate.
@@ -807,9 +822,8 @@ function buildMatchScores(includeLive, uptoDate) {
     if (m.placeholder) continue;
     if (m.n > 72) continue; // only group stage scoreable so far
     if (uptoDate !== null && m.date > uptoDate) continue;
-    const key = m.date.replace(/-/g,'');
-    const events = espnCache.get(key);
-    if (!events) continue;
+    const events = eventsNearDate(m.date);
+    if (!events.length) continue;
     const found = findEspnEvent(events, m);
     if (!found) continue;
     const state = found.comp.status && found.comp.status.type && found.comp.status.type.state;
@@ -1220,9 +1234,8 @@ function htmlEscape(s) {
 }
 
 function getMatchState(m) {
-  const key = m.date.replace(/-/g,'');
-  const events = espnCache.get(key);
-  if (!events) return 'pre';
+  const events = eventsNearDate(m.date);
+  if (!events.length) return 'pre';
   const found = findEspnEvent(events, m);
   if (!found) return 'pre';
   return (found.comp.status && found.comp.status.type && found.comp.status.type.state) || 'pre';
