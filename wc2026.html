@@ -320,6 +320,23 @@
   .lb-poke.into-shame { color:#ff7a7a; }
   .lb-poke.out-shame { color:#7fe3a9; }
 
+  /* ===== TEAM FATE BADGES (on today match cards) ===== */
+  .team-fate {
+    display:inline-block;
+    font-family:'Mulish',sans-serif; font-weight:800;
+    font-size:9px; letter-spacing:0.1em;
+    padding:2px 5px; border-radius:3px;
+    margin:0 6px; vertical-align:middle;
+    text-transform:uppercase; line-height:1;
+  }
+  .team-fate.first    { background:rgba(0,212,179,0.24); color:#00d4b3; }
+  .team-fate.second   { background:rgba(0,212,179,0.16); color:#5fddc6; }
+  .team-fate.third    { background:rgba(255,193,7,0.22); color:#ffc107; }
+  .team-fate.fourth   { background:rgba(255,100,100,0.22); color:#ff6464; }
+  .team-fate.through  { background:rgba(0,212,179,0.32); color:#00ffd1; }
+  .team-fate.bubble   { background:rgba(255,193,7,0.28); color:#ffd54f; }
+  .team-fate.out      { background:rgba(255,100,100,0.30); color:#ff5050; }
+
   /* ===== OUTLIER CALLOUTS ON TODAY CARDS ===== */
   .tmatch-outliers {
     margin-top:10px; padding-top:9px;
@@ -439,6 +456,7 @@
     .tmatch-outlier { font-size:11px; }
     .kevin-callout { font-size:10px; }
     .lb-poke { font-size:10px; margin-top:4px; padding-top:4px; }
+    .team-fate { font-size:8px; padding:1px 4px; margin:0 4px; }
     .champ-strip { padding:12px 14px; gap:10px; }
     .champ-strip-label { font-size:11px; letter-spacing:0.18em; width:100%; text-align:center; margin-bottom:4px; }
     .champ-pill { padding:4px 10px 4px 4px; }
@@ -827,6 +845,66 @@ function eventsNearDate(dateStrYMD) {
   ];
 }
 
+/* =========================================================
+   GROUP STANDINGS + TEAM FATE BADGES
+   ========================================================= */
+const GROUP_TEAMS = (function(){
+  const out = {};
+  for (const m of MATCHES) {
+    if (m.n > 72 || !m.group || m.placeholder) continue;
+    if (!out[m.group]) out[m.group] = new Set();
+    out[m.group].add(m.aCode);
+    out[m.group].add(m.bCode);
+  }
+  for (const g in out) out[g] = Array.from(out[g]);
+  return out;
+})();
+
+function computeGroupStandings(groupId, matchScores) {
+  const teams = GROUP_TEAMS[groupId];
+  if (!teams) return [];
+  const stats = {};
+  for (const t of teams) stats[t] = {code:t, played:0, won:0, drawn:0, lost:0, gf:0, ga:0, gd:0, pts:0};
+  for (const m of MATCHES) {
+    if (m.n > 72 || m.group !== groupId) continue;
+    const score = matchScores[m.n];
+    if (!score || !stats[m.aCode] || !stats[m.bCode]) continue;
+    const [a, b] = score;
+    stats[m.aCode].played++; stats[m.aCode].gf += a; stats[m.aCode].ga += b;
+    stats[m.bCode].played++; stats[m.bCode].gf += b; stats[m.bCode].ga += a;
+    if (a > b) { stats[m.aCode].won++; stats[m.aCode].pts += 3; stats[m.bCode].lost++; }
+    else if (b > a) { stats[m.bCode].won++; stats[m.bCode].pts += 3; stats[m.aCode].lost++; }
+    else { stats[m.aCode].drawn++; stats[m.aCode].pts += 1; stats[m.bCode].drawn++; stats[m.bCode].pts += 1; }
+  }
+  for (const t of teams) stats[t].gd = stats[t].gf - stats[t].ga;
+  return teams.map(t => stats[t]).sort((a,b) =>
+    b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.code.localeCompare(b.code)
+  );
+}
+
+// Returns small badge HTML for a team given its current group standing
+// and how complete the group is. Returns '' if nothing meaningful yet.
+function teamFateBadge(teamCode, groupId, matchScores) {
+  if (!groupId || !GROUP_TEAMS[groupId]) return '';
+  const standings = computeGroupStandings(groupId, matchScores);
+  const idx = standings.findIndex(s => s.code === teamCode);
+  if (idx < 0) return '';
+  if (standings[idx].played === 0) return ''; // team hasn't played yet
+  const allDone = MATCHES.filter(m => m.n <= 72 && m.group === groupId)
+                         .every(m => matchScores[m.n] !== undefined);
+  const rank = idx + 1;
+  let label, cls;
+  if (allDone) {
+    if (rank <= 2)      { label = 'THROUGH'; cls = 'through'; }
+    else if (rank === 3){ label = 'BUBBLE';  cls = 'bubble';  }
+    else                { label = 'OUT';     cls = 'out';     }
+  } else {
+    label = ['1ST','2ND','3RD','4TH'][rank-1] || (rank+'TH');
+    cls   = ['first','second','third','fourth'][rank-1] || 'fourth';
+  }
+  return '<span class="team-fate '+cls+'">'+label+'</span>';
+}
+
 // Build {matchNum -> [scoreA, scoreB]} from ESPN cache.
 // includeLive: if true, include in-progress scores; else only completed.
 // uptoDate: if set (YYYY-MM-DD), only matches with date <= uptoDate.
@@ -1012,12 +1090,15 @@ function renderTodayCard(m) {
   if (m.live) statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
   else if (m.completed) statusHtml = 'FT';
   else statusHtml = fmtTime12Short(m.time);
+  const scores = window.__currentScores || {};
+  const fateA = m.placeholder ? '' : teamFateBadge(m.aCode, m.group, scores);
+  const fateB = m.placeholder ? '' : teamFateBadge(m.bCode, m.group, scores);
   const teamA = m.placeholder
     ? '<span class="tcode placeholder">'+m.aName+'</span>'
-    : '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>';
+    : '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>'+fateA;
   const teamB = m.placeholder
     ? '<span class="tcode placeholder">'+m.bName+'</span>'
-    : '<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
+    : fateB+'<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
   const middle = showScore ? '<span class="tscore">'+m.aScore+'–'+m.bScore+'</span>' : '<span class="tvs">VS</span>';
   const cls = m.live ? ' live' : (m.completed ? ' completed' : '');
   const clickAttr = m.placeholder ? '' : ' onclick="showGameModal('+m.n+')"';
@@ -1206,7 +1287,7 @@ function getRowPoke(name, currentIdx, yIdx, N, anyScored) {
    ========================================================= */
 function renderRankings() {
   const today = dateStr(nowDate());
-  const currentScores = buildMatchScores(true, null);
+  const currentScores = window.__currentScores || buildMatchScores(true, null);
   const yesterdayScores = (function(){
     const out = {};
     for (const n in currentScores) {
@@ -1312,6 +1393,10 @@ async function update() {
   // Today panel header
   document.getElementById('today-title').textContent = anyLive ? 'Today · Live' : 'Today';
   document.getElementById('today-date').textContent = now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+
+  // Compute match scores once per render — needed by today cards (for fate
+  // badges) and the leaderboard.
+  window.__currentScores = buildMatchScores(true, null);
 
   // Render
   renderTodayPanel(now, todaysEnriched);
