@@ -151,11 +151,15 @@
   .r32-list { display:flex; flex-direction:column; gap:10px; }
   .r32-card {
     background:rgba(255,255,255,0.025); border-radius:10px;
-    padding:12px 14px; border-left:3px solid var(--border);
+    padding:12px 14px;
+    border-left:3px solid var(--border);
+    border-right:3px solid var(--border);
     display:flex; flex-direction:column; gap:8px;
   }
-  .r32-card.resolved { border-left-color:var(--atn-teal); }
-  .r32-card.projected { border-left-color:var(--atn-teal); border-left-style:dashed; }
+  .r32-card[data-left-state="confirmed"]  { border-left-style:solid;  border-left-color:var(--atn-teal); }
+  .r32-card[data-left-state="projected"]  { border-left-style:dashed; border-left-color:var(--atn-teal); }
+  .r32-card[data-right-state="confirmed"] { border-right-style:solid;  border-right-color:var(--atn-teal); }
+  .r32-card[data-right-state="projected"] { border-right-style:dashed; border-right-color:var(--atn-teal); }
   .r32-meta {
     display:flex; justify-content:space-between;
     font-family:'Syne',sans-serif; font-weight:700; font-size:11px;
@@ -163,6 +167,7 @@
   }
   .r32-meta .r32-date { color:var(--atn-teal-bright); }
   .r32-meta .r32-time { color:var(--text-dim); }
+  .r32-meta .r32-mnum { color:var(--text-dim); }
   .r32-teams { display:flex; align-items:center; gap:12px; }
   .r32-team { flex:1; display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; }
   .r32-team.right { justify-content:flex-end; }
@@ -1261,14 +1266,21 @@ function switchTab(name) {
 //   "Winners A"     — group winner. Returns confirmed once group's 6 matches end;
 //                     before that, returns the team currently in 1st (projected).
 //   "Runners-up B"  — same but for 2nd place.
-//   "Best 3rd (X/Y/...)" — left unresolved (FIFA's best-3rd assignment table is
-//                     complex and depends on which 3rd-placed teams qualify).
+//   "Best 3rd (...)"— projected from the listed groups: strongest 3rd-placer
+//                     among them (heuristic — FIFA's actual assignment table is
+//                     complex). Slots are claimed in R32 order so no team gets
+//                     projected into two different brackets.
 // Returns {code, projected} | null.
-function resolveKoPlaceholder(text, matchScores) {
+function resolveKoPlaceholder(text, matchScores, bestThirdMap, matchN) {
   let m = text.match(/^Winners ([A-L])$/);
   if (m) return resolveGroupPlace(m[1], 1, matchScores);
   m = text.match(/^Runners-up ([A-L])$/);
   if (m) return resolveGroupPlace(m[1], 2, matchScores);
+  m = text.match(/^Best 3rd \(([A-L\/]+)\)$/);
+  if (m && bestThirdMap) {
+    const code = bestThirdMap[matchN + '|' + text];
+    if (code) return { code, projected: true };
+  }
   return null;
 }
 
@@ -1281,19 +1293,51 @@ function resolveGroupPlace(groupId, place, matchScores) {
   return { code: st[place-1].code, projected: !allDone };
 }
 
+// Walk all R32 cards in match-number order and assign each "Best 3rd (...)"
+// slot the strongest available 3rd-placer from its listed groups. A team can
+// only be claimed by one slot. Returns { "matchN|text": code }.
+function buildBestThirdMap(matchScores) {
+  const r32Matches = MATCHES.filter(mm => mm.round === 'R32').sort((a,b) => a.n - b.n);
+  const claimed = new Set();
+  const out = {};
+  for (const m of r32Matches) {
+    for (const text of [m.aName, m.bName]) {
+      const mat = text.match(/^Best 3rd \(([A-L\/]+)\)$/);
+      if (!mat) continue;
+      const groupIds = mat[1].split('/');
+      const candidates = [];
+      for (const gid of groupIds) {
+        const st = computeGroupStandings(gid, matchScores);
+        if (!st[2] || st[2].played === 0) continue;
+        if (claimed.has(st[2].code)) continue;
+        candidates.push(st[2]);
+      }
+      if (candidates.length === 0) continue;
+      candidates.sort((a, b) =>
+        b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.code.localeCompare(b.code)
+      );
+      const claim = candidates[0].code;
+      claimed.add(claim);
+      out[m.n + '|' + text] = claim;
+    }
+  }
+  return out;
+}
+
 function renderR32Panel() {
   const list = document.getElementById('r32-list');
   if (!list) return;
   const scores = window.__currentScores || buildMatchScores(true, null);
+  const bestThirdMap = buildBestThirdMap(scores);
   const r32Matches = MATCHES.filter(m => m.round === 'R32');
   let html = '';
-  for (const m of r32Matches) html += renderR32Card(m, scores);
+  for (const m of r32Matches) html += renderR32Card(m, scores, bestThirdMap);
   list.innerHTML = html;
 }
 
-function renderR32Card(m, scores) {
-  const aRes = resolveKoPlaceholder(m.aName, scores);
-  const bRes = resolveKoPlaceholder(m.bName, scores);
+function renderR32Card(m, scores, bestThirdMap) {
+  const aRes = resolveKoPlaceholder(m.aName, scores, bestThirdMap, m.n);
+  const bRes = resolveKoPlaceholder(m.bName, scores, bestThirdMap, m.n);
   const sideHtml = (res, placeholder, right) => {
     if (!res || !T[res.code]) return '<span class="r32-placeholder">'+placeholder+'</span>';
     const flag = '<img class="r32-flag" src="https://flagcdn.com/w80/'+T[res.code][1]+'.png" alt="">';
@@ -1303,18 +1347,14 @@ function renderR32Card(m, scores) {
   };
   const teamA = sideHtml(aRes, m.aName, false);
   const teamB = sideHtml(bRes, m.bName, true);
-
-  // Card border state — based on resolved sides only
-  // (cards w/ Best 3rd placeholders can still light up from the other side)
-  let cls = '';
-  const anyResolved = aRes || bRes;
-  const anyProjected = (aRes && aRes.projected) || (bRes && bRes.projected);
-  if (anyResolved) cls = anyProjected ? ' projected' : ' resolved';
+  const stateFor = (res) => !res ? '' : (res.projected ? 'projected' : 'confirmed');
+  const aState = stateFor(aRes);
+  const bState = stateFor(bRes);
 
   const d = new Date(m.date+'T00:00:00');
   const dateStr = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  return '<div class="r32-card'+cls+'">'
-       + '<div class="r32-meta"><span class="r32-date">'+dateStr+'</span><span class="r32-time">'+fmtTime12Short(m.time)+'</span></div>'
+  return '<div class="r32-card" data-left-state="'+aState+'" data-right-state="'+bState+'">'
+       + '<div class="r32-meta"><span class="r32-date"><span class="r32-mnum">M'+m.n+' · </span>'+dateStr+'</span><span class="r32-time">'+fmtTime12Short(m.time)+'</span></div>'
        + '<div class="r32-teams">'
        + '<div class="r32-team">'+teamA+'</div>'
        + '<span class="r32-vs">VS</span>'
