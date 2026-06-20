@@ -889,18 +889,49 @@ function teamFateBadge(teamCode, groupId, matchScores) {
   const standings = computeGroupStandings(groupId, matchScores);
   const idx = standings.findIndex(s => s.code === teamCode);
   if (idx < 0) return '';
-  if (standings[idx].played === 0) return ''; // team hasn't played yet
-  const allDone = MATCHES.filter(m => m.n <= 72 && m.group === groupId)
-                         .every(m => matchScores[m.n] !== undefined);
+  const me = standings[idx];
+  if (me.played === 0) return '';
+
+  // Tally remaining (unscored) games per team in this group. Live games are
+  // already scored provisionally in matchScores, so they count as played here.
+  const remaining = {};
+  for (const t of GROUP_TEAMS[groupId]) remaining[t] = 0;
+  for (const m of MATCHES) {
+    if (m.n > 72 || m.group !== groupId) continue;
+    if (matchScores[m.n] === undefined) {
+      remaining[m.aCode]++;
+      remaining[m.bCode]++;
+    }
+  }
+  const allDone = Object.values(remaining).every(r => r === 0);
   const rank = idx + 1;
   let label, cls;
+
   if (allDone) {
     if (rank <= 2)      { label = 'THROUGH'; cls = 'through'; }
     else if (rank === 3){ label = 'BUBBLE';  cls = 'bubble';  }
     else                { label = 'OUT';     cls = 'out';     }
   } else {
-    label = ['1ST','2ND','3RD','4TH'][rank-1] || (rank+'TH');
-    cls   = ['first','second','third','fourth'][rank-1] || 'fourth';
+    // Live mathematical clinch (points-only):
+    //   - THROUGH if at most one other team can exceed my worst-case points
+    //   - OUT if at least two other teams are already past my best-case points
+    // If the live score shifts, this recomputes and the badge can revert.
+    const myMin = me.pts;
+    const myMax = me.pts + 3 * (remaining[teamCode] || 0);
+    let canPassMe = 0, guaranteedAhead = 0;
+    for (const t of GROUP_TEAMS[groupId]) {
+      if (t === teamCode) continue;
+      const other = standings.find(s => s.code === t);
+      const oMax = other.pts + 3 * (remaining[t] || 0);
+      if (oMax > myMin) canPassMe++;
+      if (other.pts > myMax) guaranteedAhead++;
+    }
+    if (canPassMe <= 1)            { label = 'THROUGH'; cls = 'through'; }
+    else if (guaranteedAhead >= 2) { label = 'OUT';     cls = 'out';     }
+    else {
+      label = ['1ST','2ND','3RD','4TH'][rank-1] || (rank+'TH');
+      cls   = ['first','second','third','fourth'][rank-1] || 'fourth';
+    }
   }
   return '<span class="team-fate '+cls+'">'+label+'</span>';
 }
