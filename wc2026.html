@@ -333,9 +333,20 @@
   .team-fate.second   { background:rgba(0,212,179,0.16); color:#5fddc6; }
   .team-fate.third    { background:rgba(255,193,7,0.22); color:#ffc107; }
   .team-fate.fourth   { background:rgba(255,100,100,0.22); color:#ff6464; }
-  .team-fate.through  { background:rgba(0,212,179,0.32); color:#00ffd1; }
-  .team-fate.bubble   { background:rgba(255,193,7,0.28); color:#ffd54f; }
-  .team-fate.out      { background:rgba(255,100,100,0.30); color:#ff5050; }
+  .team-fate-stack {
+    display:inline-flex; flex-direction:column;
+    align-items:center; gap:2px;
+    margin:0 6px; vertical-align:middle;
+  }
+  .team-fate-stack .team-fate { margin:0; }
+  .team-fate-status {
+    font-family:'Mulish',sans-serif; font-weight:800;
+    font-size:7.5px; letter-spacing:0.12em;
+    padding:1px 4px; border-radius:2px;
+    text-transform:uppercase; line-height:1;
+  }
+  .team-fate-status.adv { background:rgba(0,212,179,0.32); color:#00ffd1; }
+  .team-fate-status.out { background:rgba(255,100,100,0.30); color:#ff5050; }
 
   /* ===== OUTLIER CALLOUTS ON TODAY CARDS ===== */
   .tmatch-outliers {
@@ -457,6 +468,9 @@
     .kevin-callout { font-size:10px; }
     .lb-poke { font-size:10px; margin-top:4px; padding-top:4px; }
     .team-fate { font-size:8px; padding:1px 4px; margin:0 4px; }
+    .team-fate-stack { margin:0 4px; gap:1px; }
+    .team-fate-stack .team-fate { margin:0; }
+    .team-fate-status { font-size:6.5px; padding:1px 3px; }
     .champ-strip { padding:12px 14px; gap:10px; }
     .champ-strip-label { font-size:11px; letter-spacing:0.18em; width:100%; text-align:center; margin-bottom:4px; }
     .champ-pill { padding:4px 10px 4px 4px; }
@@ -905,17 +919,17 @@ function teamFateBadge(teamCode, groupId, matchScores) {
   }
   const allDone = Object.values(remaining).every(r => r === 0);
   const rank = idx + 1;
-  let label, cls;
+  const rankLabel = ['1ST','2ND','3RD','4TH'][rank-1] || (rank+'TH');
+  const rankCls   = ['first','second','third','fourth'][rank-1] || 'fourth';
 
+  // Determine fate (mid-group math clinch OR final rank).
+  // If the live score shifts, this recomputes and the badge can revert.
+  let fate = null;
   if (allDone) {
-    if (rank <= 2)      { label = 'THROUGH'; cls = 'through'; }
-    else if (rank === 3){ label = 'BUBBLE';  cls = 'bubble';  }
-    else                { label = 'OUT';     cls = 'out';     }
+    if (rank <= 2)      fate = 'adv';
+    else if (rank === 4) fate = 'out';
+    // 3rd place stays ambiguous (could still advance as best 3rd)
   } else {
-    // Live mathematical clinch (points-only):
-    //   - THROUGH if at most one other team can exceed my worst-case points
-    //   - OUT if at least two other teams are already past my best-case points
-    // If the live score shifts, this recomputes and the badge can revert.
     const myMin = me.pts;
     const myMax = me.pts + 3 * (remaining[teamCode] || 0);
     let canPassMe = 0, guaranteedAhead = 0;
@@ -926,14 +940,14 @@ function teamFateBadge(teamCode, groupId, matchScores) {
       if (oMax > myMin) canPassMe++;
       if (other.pts > myMax) guaranteedAhead++;
     }
-    if (canPassMe <= 1)            { label = 'THROUGH'; cls = 'through'; }
-    else if (guaranteedAhead >= 2) { label = 'OUT';     cls = 'out';     }
-    else {
-      label = ['1ST','2ND','3RD','4TH'][rank-1] || (rank+'TH');
-      cls   = ['first','second','third','fourth'][rank-1] || 'fourth';
-    }
+    if (canPassMe <= 1)            fate = 'adv';
+    else if (guaranteedAhead >= 2) fate = 'out';
   }
-  return '<span class="team-fate '+cls+'">'+label+'</span>';
+
+  const rankSpan = '<span class="team-fate '+rankCls+'">'+rankLabel+'</span>';
+  if (!fate) return rankSpan;
+  const statusSpan = '<span class="team-fate-status '+fate+'">'+fate.toUpperCase()+'</span>';
+  return '<span class="team-fate-stack">'+rankSpan+statusSpan+'</span>';
 }
 
 // Build {matchNum -> [scoreA, scoreB]} from ESPN cache.
