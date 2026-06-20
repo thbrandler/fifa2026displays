@@ -1289,8 +1289,32 @@ function resolveGroupPlace(groupId, place, matchScores) {
   if (groupMatches.length === 0) return null;
   const st = computeGroupStandings(groupId, matchScores);
   if (!st[place-1] || st[place-1].played === 0) return null;
+
+  const me = st[place-1];
   const allDone = groupMatches.every(mm => matchScores[mm.n] !== undefined);
-  return { code: st[place-1].code, projected: !allDone };
+  if (allDone) return { code: me.code, projected: false };
+
+  // Group not fully done yet — treat as confirmed if this team has clinched
+  // top 2 (same canPassMe ≤ 1 math as the today-card ADV badge). The exact
+  // 1st-vs-2nd slot might still shuffle, but the team is locked in one of
+  // them. Note: this is the same heuristic; rare 3-way-tie tiebreaker edge
+  // cases aren't accounted for.
+  const remaining = {};
+  for (const t of GROUP_TEAMS[groupId]) remaining[t] = 0;
+  for (const mm of groupMatches) {
+    if (matchScores[mm.n] === undefined) {
+      remaining[mm.aCode]++;
+      remaining[mm.bCode]++;
+    }
+  }
+  let canPassMe = 0;
+  for (const t of GROUP_TEAMS[groupId]) {
+    if (t === me.code) continue;
+    const other = st.find(s => s.code === t);
+    const oMax = other.pts + 3 * (remaining[t] || 0);
+    if (oMax > me.pts) canPassMe++;
+  }
+  return { code: me.code, projected: canPassMe > 1 };
 }
 
 // Walk all R32 cards in match-number order and assign each "Best 3rd (...)"
