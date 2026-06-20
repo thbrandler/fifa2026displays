@@ -765,8 +765,12 @@ function enrich(match, events) {
   out.espnStatus = state || 'unknown';
   const sA = teams.find(t => teamToCode(t.team) === match.aCode);
   const sB = teams.find(t => teamToCode(t.team) === match.bCode);
-  if (sA) out.aScore = (sA.score!=null) ? parseInt(sA.score,10) : null;
-  if (sB) out.bScore = (sB.score!=null) ? parseInt(sB.score,10) : null;
+  // Only attach scores when the match is live or finished — ESPN reports
+  // score=0 for pre-state matches, which would freeze the display at "0-0".
+  if (state === 'in' || state === 'post') {
+    if (sA) out.aScore = (sA.score!=null) ? parseInt(sA.score,10) : null;
+    if (sB) out.bScore = (sB.score!=null) ? parseInt(sB.score,10) : null;
+  }
   if (state==='in') {
     out.live = true;
     const period = comp.status && comp.status.type && comp.status.type.shortDetail;
@@ -1181,7 +1185,16 @@ async function update() {
   const now = nowDate();
   const today = dateStr(now);
   const todaysStatic = matchesOn(now);
-  const todaysEvents = espnCache.get(today.replace(/-/g,''));
+  // Merge events from yesterday, today, and tomorrow — handles cases where
+  // ESPN buckets a midnight-ET kickoff under the venue's local date, which
+  // may be the previous (or next) calendar day.
+  const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+  const tmrw = new Date(now); tmrw.setDate(tmrw.getDate() + 1);
+  const todaysEvents = [
+    ...(espnCache.get(dateStr(yest).replace(/-/g,'')) || []),
+    ...(espnCache.get(today.replace(/-/g,'')) || []),
+    ...(espnCache.get(dateStr(tmrw).replace(/-/g,'')) || []),
+  ];
   const todaysEnriched = todaysStatic.map(m => enrich(m, todaysEvents));
   const anyLive = todaysEnriched.some(m => m.live);
 
