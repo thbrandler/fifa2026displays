@@ -141,6 +141,11 @@
   }
   .card-pip.yellow { background:#ffc107; }
   .card-pip.red { background:#ff3b30; }
+  .penalty-ball {
+    width:13px; height:13px;
+    display:inline-block; vertical-align:middle; flex-shrink:0;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  }
   .live-adv {
     margin-top:12px; padding-top:12px;
     border-top:1px solid rgba(255,255,255,0.08);
@@ -982,6 +987,26 @@ function extractCardCount(team, name) {
   return isNaN(v) ? 0 : v;
 }
 
+function extractPenaltyGoals(comp, teamId) {
+  if (!comp || !teamId) return 0;
+  const details = comp.details;
+  if (!Array.isArray(details)) return 0;
+  let count = 0;
+  for (const play of details) {
+    if (!play) continue;
+    const t = (play.type && play.type.text) ? String(play.type.text).toLowerCase() : '';
+    if (!t.includes('penalty')) continue;
+    // Exclude shootout penalties (those don't count toward the match score)
+    if (t.includes('shootout') || t.includes('shoot-out')) continue;
+    // Must be a scored penalty (not a miss, not a foul awarded)
+    const scored = play.scoringPlay === true || t.includes('scored') || t.includes('goal');
+    if (!scored) continue;
+    const playTeamId = play.team && (play.team.id != null ? play.team.id : play.team);
+    if (String(playTeamId) === String(teamId)) count++;
+  }
+  return count;
+}
+
 function enrich(match, events) {
   const out = {...match};
   const found = findEspnEvent(events, match);
@@ -1001,6 +1026,9 @@ function enrich(match, events) {
     out.aRed    = extractCardCount(sA, 'redCards');
     out.bYellow = extractCardCount(sB, 'yellowCards');
     out.bRed    = extractCardCount(sB, 'redCards');
+    // Penalty goals (parsed from play-by-play details)
+    out.aPenalty = extractPenaltyGoals(comp, sA && sA.team && sA.team.id);
+    out.bPenalty = extractPenaltyGoals(comp, sB && sB.team && sB.team.id);
   }
   if (state==='in') {
     out.live = true;
@@ -1598,11 +1626,12 @@ function renderAdvRow(teamCode, liveMatch, scores) {
        + '</div>';
 }
 
-function renderCardChips(yellow, red) {
-  if (!yellow && !red) return '';
+function renderCardChips(yellow, red, penalty) {
+  if (!yellow && !red && !penalty) return '';
   let s = '';
-  if (yellow) s += '<span class="card-chip"><span class="card-pip yellow"></span>'+yellow+'</span>';
-  if (red)    s += '<span class="card-chip"><span class="card-pip red"></span>'+red+'</span>';
+  if (yellow)  s += '<span class="card-chip"><span class="card-pip yellow"></span>'+yellow+'</span>';
+  if (red)     s += '<span class="card-chip"><span class="card-pip red"></span>'+red+'</span>';
+  if (penalty) s += '<span class="card-chip"><svg class="penalty-ball" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="1"/><polygon points="8,5.5 9.9,6.9 9.2,9.1 6.8,9.1 6.1,6.9" fill="#1a1a1a"/></svg>'+penalty+'</span>';
   return s;
 }
 
@@ -1610,8 +1639,8 @@ function renderLiveExpandedCard(m) {
   const showScore = (m.aScore != null && m.bScore != null);
   const statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
   const scores = window.__currentScores || {};
-  const cardsA = renderCardChips(m.aYellow||0, m.aRed||0);
-  const cardsB = renderCardChips(m.bYellow||0, m.bRed||0);
+  const cardsA = renderCardChips(m.aYellow||0, m.aRed||0, m.aPenalty||0);
+  const cardsB = renderCardChips(m.bYellow||0, m.bRed||0, m.bPenalty||0);
   const colA = '<div class="tcode-col"><span class="tcode">'+m.aCode+'</span>'
              + (cardsA ? '<div class="tcode-cards">'+cardsA+'</div>' : '')+'</div>';
   const colB = '<div class="tcode-col"><span class="tcode">'+m.bCode+'</span>'
@@ -1673,8 +1702,8 @@ function renderTodayCard(m) {
     teamA = '<span class="tcode placeholder">'+m.aName+'</span>';
     teamB = '<span class="tcode placeholder">'+m.bName+'</span>';
   } else {
-    const cardsA = renderCardChips(m.aYellow||0, m.aRed||0);
-    const cardsB = renderCardChips(m.bYellow||0, m.bRed||0);
+    const cardsA = renderCardChips(m.aYellow||0, m.aRed||0, m.aPenalty||0);
+    const cardsB = renderCardChips(m.bYellow||0, m.bRed||0, m.bPenalty||0);
     const colA = '<div class="tcode-col">'
                + '<div class="tcode-row"><span class="tcode">'+m.aCode+'</span>'+fateA+'</div>'
                + (cardsA ? '<div class="tcode-cards">'+cardsA+'</div>' : '')
