@@ -1536,6 +1536,7 @@ function renderAdvRow(teamCode, liveMatch, scores) {
   const w = classifyTeamOutcome(teamCode, liveMatch, 'W', scores);
   const d = classifyTeamOutcome(teamCode, liveMatch, 'D', scores);
   const l = classifyTeamOutcome(teamCode, liveMatch, 'L', scores);
+  const fate = teamFateBadge(teamCode, liveMatch.group, scores);
   const oc = (verb, res) =>
     '<span class="live-adv-outcome">'
     + '<span class="live-adv-outcome-verb">'+verb+'</span>'
@@ -1543,7 +1544,7 @@ function renderAdvRow(teamCode, liveMatch, scores) {
     + '<span class="live-adv-outcome-text '+(res.tone||'')+'">'+res.label+'</span>'
     + '</span>';
   return '<div class="live-adv-row">'
-       + '<span class="live-adv-team">'+teamCode+'</span>'
+       + '<span class="live-adv-team">'+teamCode+fate+'</span>'
        + '<div class="live-adv-outcomes">'+oc('Win',w)+oc('Tie',d)+oc('Lose',l)+'</div>'
        + '</div>';
 }
