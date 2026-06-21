@@ -120,6 +120,27 @@
 
   /* Live-expanded cards (only when a group-stage match is live) */
   .tmatch.live-expanded { padding:16px 20px; flex:none; }
+
+  /* Stacked column for team code with optional cards underneath. The flag
+     sits left of this column. align-self pins flag to the top of the column
+     so flag aligns with the team code (cards extend below). */
+  .tteam { align-items:flex-start; }
+  .tcode-col { display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; }
+  .tteam.right .tcode-col { align-items:flex-end; }
+  .tcode-row { display:flex; align-items:center; }
+  .tcode-cards { display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .tteam.right .tcode-cards { justify-content:flex-end; }
+  .card-chip {
+    display:inline-flex; align-items:center; gap:4px;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:11px;
+    color:var(--text-dim); letter-spacing:0.04em;
+  }
+  .card-pip {
+    width:9px; height:12px; border-radius:1.5px; display:inline-block;
+    box-shadow:0 1px 2px rgba(0,0,0,0.4);
+  }
+  .card-pip.yellow { background:#ffc107; }
+  .card-pip.red { background:#ff3b30; }
   .live-adv {
     margin-top:12px; padding-top:12px;
     border-top:1px solid rgba(255,255,255,0.08);
@@ -284,7 +305,7 @@
     min-height:0;
   }
   .leaderboard.top .lb-row { flex:0 0 auto; min-height:92px; }
-  .leaderboard.shame .lb-row { flex:0 0 auto; }
+  .leaderboard.shame .lb-row { flex:0 0 auto; min-height:92px; }
   .lb-row.gold { border-left-color:var(--gold); }
   .lb-row.silver { border-left-color:var(--silver); }
   .lb-row.bronze { border-left-color:var(--bronze); }
@@ -530,7 +551,7 @@
     .tmatch { padding:12px 14px; flex:0 0 auto; }
     .tflag { width:32px; height:22px; }
     .tcode { font-size:22px; }
-    .tscore { font-size:24px; }
+    .tscore { font-size:21px; letter-spacing:0; font-variant-numeric:tabular-nums; }
     .tvs { font-size:12px; }
     .tmatch-group { font-size:11px; }
     .tmatch-status { font-size:12px; }
@@ -953,6 +974,14 @@ function findEspnEvent(events, match) {
   return null;
 }
 
+function extractCardCount(team, name) {
+  if (!team || !Array.isArray(team.statistics)) return 0;
+  const s = team.statistics.find(x => x && x.name === name);
+  if (!s) return 0;
+  const v = parseInt(s.displayValue != null ? s.displayValue : (s.value != null ? s.value : 0), 10);
+  return isNaN(v) ? 0 : v;
+}
+
 function enrich(match, events) {
   const out = {...match};
   const found = findEspnEvent(events, match);
@@ -967,6 +996,11 @@ function enrich(match, events) {
   if (state === 'in' || state === 'post') {
     if (sA) out.aScore = (sA.score!=null) ? parseInt(sA.score,10) : null;
     if (sB) out.bScore = (sB.score!=null) ? parseInt(sB.score,10) : null;
+    // Card counts (ESPN typically exposes yellowCards / redCards in team statistics)
+    out.aYellow = extractCardCount(sA, 'yellowCards');
+    out.aRed    = extractCardCount(sA, 'redCards');
+    out.bYellow = extractCardCount(sB, 'yellowCards');
+    out.bRed    = extractCardCount(sB, 'redCards');
   }
   if (state==='in') {
     out.live = true;
@@ -1564,12 +1598,26 @@ function renderAdvRow(teamCode, liveMatch, scores) {
        + '</div>';
 }
 
+function renderCardChips(yellow, red) {
+  if (!yellow && !red) return '';
+  let s = '';
+  if (yellow) s += '<span class="card-chip"><span class="card-pip yellow"></span>'+yellow+'</span>';
+  if (red)    s += '<span class="card-chip"><span class="card-pip red"></span>'+red+'</span>';
+  return s;
+}
+
 function renderLiveExpandedCard(m) {
   const showScore = (m.aScore != null && m.bScore != null);
   const statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
   const scores = window.__currentScores || {};
-  const teamA = '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>';
-  const teamB = '<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
+  const cardsA = renderCardChips(m.aYellow||0, m.aRed||0);
+  const cardsB = renderCardChips(m.bYellow||0, m.bRed||0);
+  const colA = '<div class="tcode-col"><span class="tcode">'+m.aCode+'</span>'
+             + (cardsA ? '<div class="tcode-cards">'+cardsA+'</div>' : '')+'</div>';
+  const colB = '<div class="tcode-col"><span class="tcode">'+m.bCode+'</span>'
+             + (cardsB ? '<div class="tcode-cards">'+cardsB+'</div>' : '')+'</div>';
+  const teamA = '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt="">'+colA;
+  const teamB = colB+'<img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
   const middle = showScore ? '<span class="tscore">'+m.aScore+'–'+m.bScore+'</span>' : '<span class="tvs">VS</span>';
   const advA = renderAdvRow(m.aCode, m, scores);
   const advB = renderAdvRow(m.bCode, m, scores);
@@ -1620,12 +1668,24 @@ function renderTodayCard(m) {
   const scores = window.__currentScores || {};
   const fateA = m.placeholder ? '' : teamFateBadge(m.aCode, m.group, scores);
   const fateB = m.placeholder ? '' : teamFateBadge(m.bCode, m.group, scores);
-  const teamA = m.placeholder
-    ? '<span class="tcode placeholder">'+m.aName+'</span>'
-    : '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>'+fateA;
-  const teamB = m.placeholder
-    ? '<span class="tcode placeholder">'+m.bName+'</span>'
-    : fateB+'<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
+  let teamA, teamB;
+  if (m.placeholder) {
+    teamA = '<span class="tcode placeholder">'+m.aName+'</span>';
+    teamB = '<span class="tcode placeholder">'+m.bName+'</span>';
+  } else {
+    const cardsA = renderCardChips(m.aYellow||0, m.aRed||0);
+    const cardsB = renderCardChips(m.bYellow||0, m.bRed||0);
+    const colA = '<div class="tcode-col">'
+               + '<div class="tcode-row"><span class="tcode">'+m.aCode+'</span>'+fateA+'</div>'
+               + (cardsA ? '<div class="tcode-cards">'+cardsA+'</div>' : '')
+               + '</div>';
+    const colB = '<div class="tcode-col">'
+               + '<div class="tcode-row">'+fateB+'<span class="tcode">'+m.bCode+'</span></div>'
+               + (cardsB ? '<div class="tcode-cards">'+cardsB+'</div>' : '')
+               + '</div>';
+    teamA = '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt="">'+colA;
+    teamB = colB+'<img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
+  }
   const middle = showScore ? '<span class="tscore">'+m.aScore+'–'+m.bScore+'</span>' : '<span class="tvs">VS</span>';
   const cls = m.live ? ' live' : (m.completed ? ' completed' : '');
   const clickAttr = m.placeholder ? '' : ' onclick="showGameModal('+m.n+')"';
