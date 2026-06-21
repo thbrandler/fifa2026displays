@@ -87,7 +87,7 @@
   .today-empty { font-family:'Mulish',sans-serif; font-weight:700; font-size:13px; color:var(--text-dimmer); text-align:center; margin-top:30px; letter-spacing:0.22em; text-transform:uppercase; }
 
   /* Today match cards — sized to fit ~6-8 matches comfortably */
-  .tmatch { background:var(--bg-card); border-radius:11px; padding:14px 16px; border-left:4px solid var(--atn-teal); flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; }
+  .tmatch { background:var(--bg-card); border-radius:11px; padding:14px 16px; border-left:4px solid var(--atn-teal); }
   .tmatch.completed { opacity:0.6; border-left-color:var(--text-dimmer); }
   .tmatch.live { border-left-color:var(--live); background:linear-gradient(90deg, rgba(255,59,48,0.12), var(--bg-card)); box-shadow:0 0 0 1px rgba(255,59,48,0.3); }
   .tmatch-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
@@ -273,7 +273,7 @@
     min-height:0;
   }
   .leaderboard.top .lb-row { flex:0 0 auto; min-height:92px; }
-  .leaderboard.shame .lb-row { flex:1; }
+  .leaderboard.shame .lb-row { flex:0 0 auto; }
   .lb-row.gold { border-left-color:var(--gold); }
   .lb-row.silver { border-left-color:var(--silver); }
   .lb-row.bronze { border-left-color:var(--bronze); }
