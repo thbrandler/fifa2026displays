@@ -125,18 +125,16 @@
     display:inline-flex; align-items:center; gap:6px;
     font-family:'Mulish',sans-serif; font-size:12px; color:var(--text-dim);
   }
-  .live-adv-outcome-letter {
-    display:inline-flex; align-items:center; justify-content:center;
-    width:20px; height:20px;
-    font-family:'Mulish',sans-serif; font-weight:800; font-size:11px;
-    border-radius:3px; line-height:1;
+  .live-adv-outcome-verb {
+    font-family:'Mulish',sans-serif; font-weight:800; font-size:10px;
+    letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--text-dim); min-width:32px;
   }
-  .live-adv-outcome-letter.w { background:rgba(0,212,179,0.24); color:#00d4b3; }
-  .live-adv-outcome-letter.d { background:rgba(255,193,7,0.22); color:#ffc107; }
-  .live-adv-outcome-letter.l { background:rgba(255,100,100,0.22); color:#ff6464; }
+  .live-adv-arrow { color:var(--text-dimmer); font-weight:600; }
   .live-adv-outcome-text { font-weight:600; color:var(--text); }
-  .live-adv-outcome-text.through { color:#00ffd1; }
-  .live-adv-outcome-text.out     { color:#ff5050; }
+  .live-adv-outcome-text.adv { color:#00ffd1; }
+  .live-adv-outcome-text.if  { color:#ffc107; }
+  .live-adv-outcome-text.out { color:#ff5050; }
 
   /* ===== MOBILE TABS + R32 BRACKET PANE =====
      Tabs are mobile-only. On TV, #tab-r32 is hidden and only the
@@ -1405,95 +1403,148 @@ function classifyTeamOutcome(teamCode, liveMatch, outcome, baseScores) {
   else if (outcome === 'D') hypoScores[liveMatch.n] = [0,0];
   else                      hypoScores[liveMatch.n] = tHome ? [0,1] : [1,0];
 
-  const standings = computeGroupStandings(groupId, hypoScores);
-  const me = standings.find(s => s.code === teamCode);
-  if (!me) return { label:'', tone:'' };
-
-  const remaining = {};
-  for (const t of GROUP_TEAMS[groupId]) remaining[t] = 0;
-  for (const m of MATCHES) {
-    if (m.n > 72 || m.group !== groupId) continue;
-    if (hypoScores[m.n] === undefined) {
-      remaining[m.aCode]++;
-      remaining[m.bCode]++;
-    }
-  }
-
-  // Already clinched / eliminated by this outcome alone?
-  const myMin = me.pts;
-  const myMax = me.pts + 3 * (remaining[teamCode] || 0);
-  let canPassMe = 0, guaranteedAhead = 0;
-  for (const t of GROUP_TEAMS[groupId]) {
-    if (t === teamCode) continue;
-    const other = standings.find(s => s.code === t);
-    const oMax = other.pts + 3 * (remaining[t] || 0);
-    if (oMax > myMin) canPassMe++;
-    if (other.pts > myMax) guaranteedAhead++;
-  }
-  if (canPassMe <= 1)       return { label:'Clinches', tone:'through' };
-  if (guaranteedAhead >= 2) return { label:'Out',      tone:'out' };
-
-  // T's remaining games in this group
-  const tRemaining = MATCHES.filter(m =>
-    m.n <= 72 && m.group === groupId &&
-    (m.aCode === teamCode || m.bCode === teamCode) &&
-    hypoScores[m.n] === undefined
+  // All remaining (unscored) group matches after this outcome
+  const remaining = MATCHES.filter(m =>
+    m.n <= 72 && m.group === groupId && hypoScores[m.n] === undefined
   );
 
-  // MD1 live game — only point status (deep scenarios aren't meaningful yet)
-  if (tRemaining.length >= 2) {
-    if (me.pts === 3) return { label:'Strong start', tone:'' };
-    if (me.pts === 1) return { label:'Open group',   tone:'' };
-    return                  { label:'Setback',      tone:'' };
+  // No more games — fate sealed
+  if (remaining.length === 0) {
+    const st = computeGroupStandings(groupId, hypoScores);
+    const rank = st.findIndex(s => s.code === teamCode) + 1;
+    return (rank > 0 && rank <= 2)
+      ? { label:'Adv', tone:'adv' }
+      : { label:'Out', tone:'out' };
   }
-  if (tRemaining.length === 0) return { label:'In the mix', tone:'' };
 
-  // MD2 — 1 remaining group game for T. Test outcomes.
-  const next = tRemaining[0];
-  const oppCode = next.aCode === teamCode ? next.bCode : next.aCode;
-  const testT = (out) => {
-    const s = Object.assign({}, hypoScores);
-    const home = next.aCode === teamCode;
-    if (out === 'W')      s[next.n] = home ? [1,0] : [0,1];
-    else if (out === 'D') s[next.n] = [0,0];
-    else                  s[next.n] = home ? [0,1] : [1,0];
-    const st = computeGroupStandings(groupId, s);
-    const m2 = st.find(x => x.code === teamCode);
-    const rem = {};
-    for (const t of GROUP_TEAMS[groupId]) rem[t] = 0;
-    for (const mm of MATCHES) {
-      if (mm.n > 72 || mm.group !== groupId) continue;
-      if (s[mm.n] === undefined) { rem[mm.aCode]++; rem[mm.bCode]++; }
+  // MD1 (4+ remaining) — too early for specific scenarios
+  if (remaining.length > 3) {
+    const st = computeGroupStandings(groupId, hypoScores);
+    const me = st.find(s => s.code === teamCode);
+    if (!me || me.played === 0) return { label:'', tone:'' };
+    if (me.pts === 3) return { label:'Strong start', tone:'if' };
+    if (me.pts === 1) return { label:'Open',         tone:'if' };
+    return                  { label:'Setback',      tone:'if' };
+  }
+
+  // MD2/MD3 — enumerate scenarios (≤27)
+  const tNextIdx = remaining.findIndex(m => m.aCode === teamCode || m.bCode === teamCode);
+  const tNextMatch = tNextIdx >= 0 ? remaining[tNextIdx] : null;
+  const otherMatches = remaining.filter(m => m !== tNextMatch);
+
+  // Enumerate all combinations of (T-next outcome × other matches outcomes)
+  // Bucketed by T's outcome in their next match.
+  const buckets = { W:[], D:[], L:[] };
+  const noNextResults = []; // when T has no next game (MD3 cases)
+  const N = remaining.length;
+  for (let s = 0; s < 3 ** N; s++) {
+    let v = s;
+    const test = Object.assign({}, hypoScores);
+    let tOut = null;
+    const others = [];
+    for (let i = 0; i < N; i++) {
+      const m = remaining[i];
+      const o = v % 3; v = (v / 3) | 0;
+      const isT = (m.aCode === teamCode || m.bCode === teamCode);
+      if (isT) {
+        const homeT = m.aCode === teamCode;
+        if (o === 0)      { test[m.n] = homeT ? [1,0] : [0,1]; tOut = 'W'; }
+        else if (o === 1) { test[m.n] = [0,0];                 tOut = 'D'; }
+        else              { test[m.n] = homeT ? [0,1] : [1,0]; tOut = 'L'; }
+      } else {
+        if (o === 0)      test[m.n] = [1,0];
+        else if (o === 1) test[m.n] = [0,0];
+        else              test[m.n] = [0,1];
+        others.push({ matchN: m.n, idx: o });
+      }
     }
-    let p = 0, a = 0;
-    for (const t of GROUP_TEAMS[groupId]) {
-      if (t === teamCode) continue;
-      const o = st.find(x => x.code === t);
-      const oMax = o.pts + 3 * (rem[t] || 0);
-      if (oMax > m2.pts) p++;
-      if (o.pts > m2.pts + 3 * (rem[teamCode] || 0)) a++;
+    const st = computeGroupStandings(groupId, test);
+    const rank = st.findIndex(s => s.code === teamCode) + 1;
+    const top2 = rank > 0 && rank <= 2;
+    if (tOut !== null) buckets[tOut].push({ top2, others });
+    else               noNextResults.push({ top2, others });
+  }
+
+  // MD3 with no next-game (T already played their MD3 in the live match)
+  if (!tNextMatch) {
+    if (noNextResults.every(r => r.top2)) return { label:'Adv', tone:'adv' };
+    if (noNextResults.every(r => !r.top2)) return { label:'Out', tone:'out' };
+    return { label:'In the mix', tone:'if' };
+  }
+
+  // Find the easiest T-next outcome that still leads to top 2 (W > D > L).
+  // For that outcome, describe the other-game help required.
+  for (const tryO of ['W','D','L']) {
+    const bucket = buckets[tryO];
+    if (!bucket.length) continue;
+    const top2 = bucket.filter(s => s.top2);
+    if (top2.length === 0) continue;
+
+    if (top2.length === bucket.length) {
+      // All other-game outcomes work — no help needed
+      return buildAdvLabel(teamCode, tNextMatch, tryO, []);
     }
-    return { pass:p, ahead:a };
-  };
-  const w = testT('W'), d = testT('D');
-  if (d.pass <= 1) return { label:'Draw vs '+oppCode, tone:'' };
-  if (w.pass <= 1) return { label:'Beat '+oppCode,    tone:'' };
-  if (w.ahead < 2) return { label:'Beat '+oppCode+' + help', tone:'' };
-  return                  { label:'Out',              tone:'out' };
+
+    // Some other-game outcomes work — describe them per match
+    const helpfulPerMatch = new Map(); // matchN → Set<idx>
+    for (const sc of top2) {
+      for (const o of sc.others) {
+        if (!helpfulPerMatch.has(o.matchN)) helpfulPerMatch.set(o.matchN, new Set());
+        helpfulPerMatch.get(o.matchN).add(o.idx);
+      }
+    }
+    const helpDescs = [];
+    for (const om of otherMatches) {
+      const indices = helpfulPerMatch.get(om.n);
+      if (!indices || indices.size === 3) continue;
+      const desc = describeHelp(om, indices);
+      if (desc) helpDescs.push(desc);
+    }
+    return buildAdvLabel(teamCode, tNextMatch, tryO, helpDescs);
+  }
+
+  return { label:'Out', tone:'out' };
+}
+
+// Describe which other-match outcomes are helpful for the team. Indices:
+// 0 = aCode beats bCode, 1 = draw, 2 = bCode beats aCode.
+function describeHelp(other, indices) {
+  const a = other.aCode, b = other.bCode;
+  const key = [...indices].sort().join(',');
+  switch (key) {
+    case '0':   return a + ' beats ' + b;
+    case '1':   return a + '-' + b + ' tie';
+    case '2':   return b + ' beats ' + a;
+    case '0,1': return a + " doesn't lose to " + b;
+    case '1,2': return b + " doesn't lose to " + a;
+    case '0,2': return a + '-' + b + ' decided';
+    default:    return '';
+  }
+}
+
+function buildAdvLabel(teamCode, tNextMatch, tOutcome, helpDescs) {
+  const oppCode = tNextMatch.aCode === teamCode ? tNextMatch.bCode : tNextMatch.aCode;
+  let verbT;
+  if (tOutcome === 'W')      verbT = 'beat ' + oppCode;
+  else if (tOutcome === 'D') verbT = 'tie ' + oppCode;
+  else                       verbT = 'lose to ' + oppCode;
+  if (!helpDescs.length) return { label:'Adv if ' + verbT, tone:'if' };
+  return { label:'Adv if ' + verbT + ' + ' + helpDescs.join(' + '), tone:'if' };
 }
 
 function renderAdvRow(teamCode, liveMatch, scores) {
   const w = classifyTeamOutcome(teamCode, liveMatch, 'W', scores);
   const d = classifyTeamOutcome(teamCode, liveMatch, 'D', scores);
   const l = classifyTeamOutcome(teamCode, liveMatch, 'L', scores);
-  const oc = (letter, res) =>
+  const oc = (verb, res) =>
     '<span class="live-adv-outcome">'
-    + '<span class="live-adv-outcome-letter '+letter.toLowerCase()+'">'+letter+'</span>'
+    + '<span class="live-adv-outcome-verb">'+verb+'</span>'
+    + '<span class="live-adv-arrow">→</span>'
     + '<span class="live-adv-outcome-text '+(res.tone||'')+'">'+res.label+'</span>'
     + '</span>';
   return '<div class="live-adv-row">'
        + '<span class="live-adv-team">'+teamCode+'</span>'
-       + '<div class="live-adv-outcomes">'+oc('W',w)+oc('D',d)+oc('L',l)+'</div>'
+       + '<div class="live-adv-outcomes">'+oc('Win',w)+oc('Tie',d)+oc('Lose',l)+'</div>'
        + '</div>';
 }
 
