@@ -71,9 +71,20 @@
 
   /* Body grid: today + top 5 + shame zone */
   .body-grid {
-    flex:1; display:grid; grid-template-columns: 1fr 1fr 1fr;
-    gap:18px; margin-top:18px; min-height:0; position:relative; z-index:1;
+    flex:1; display:grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;
+    gap:18px; margin-top:18px; min-height:0; min-width:0; position:relative; z-index:1;
   }
+
+  /* Chain flex:1 from .stage down to .body-grid so columns are constrained to stage
+     height (otherwise body-grid would size to content = ~2500px and standings can't
+     scroll, while today/shame stretch their backgrounds below their cards). */
+  #tab-container { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
+  #tab-main { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
+
+  /* Today + Shame: size to content (no panel-bg stretching below cards). Standings
+     keeps default stretch so the column has a real height to overflow within. */
+  .body-grid > .today-panel { align-self:start; max-height:100%; }
+  .body-grid > .leaderboard.shame { align-self:start; max-height:100%; }
 
   /* ===== TODAY PANEL ===== */
   .today-panel, .leaderboard {
@@ -498,6 +509,10 @@
     .body-grid {
       display:flex; flex-direction:column; gap:14px; margin-top:16px;
     }
+    /* Unwind the TV flex chain — on phone the page scrolls natively */
+    #tab-container, #tab-main { display:block; flex:none; min-height:auto; }
+    .body-grid > .today-panel,
+    .body-grid > .leaderboard.shame { align-self:auto; max-height:none; }
     .today-panel, .leaderboard { padding:16px 14px 12px; }
     .panel-title, .lb-title { font-size:17px; letter-spacing:0.16em; }
     .panel-subtitle, .lb-subtitle { font-size:10px; }
