@@ -1553,10 +1553,8 @@ function renderLiveExpandedCard(m) {
   const showScore = (m.aScore != null && m.bScore != null);
   const statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
   const scores = window.__currentScores || {};
-  const fateA = teamFateBadge(m.aCode, m.group, scores);
-  const fateB = teamFateBadge(m.bCode, m.group, scores);
-  const teamA = '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>'+fateA;
-  const teamB = fateB+'<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
+  const teamA = '<img class="tflag" src="https://flagcdn.com/w80/'+m.aFlag+'.png" alt=""><span class="tcode">'+m.aCode+'</span>';
+  const teamB = '<span class="tcode">'+m.bCode+'</span><img class="tflag" src="https://flagcdn.com/w80/'+m.bFlag+'.png" alt="">';
   const middle = showScore ? '<span class="tscore">'+m.aScore+'–'+m.bScore+'</span>' : '<span class="tvs">VS</span>';
   const advA = renderAdvRow(m.aCode, m, scores);
   const advB = renderAdvRow(m.bCode, m, scores);
