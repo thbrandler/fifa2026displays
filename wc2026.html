@@ -1542,11 +1542,28 @@ function classifyTeamOutcome(teamCode, liveMatch, outcome, baseScores) {
     else               noNextResults.push({ top2, others });
   }
 
-  // MD3 with no next-game (T already played their MD3 in the live match)
+  // T has no next game (their MD3 IS the live match being analyzed). Their fate
+  // depends entirely on the other-game scenarios.
   if (!tNextMatch) {
     if (noNextResults.every(r => r.top2)) return { label:'Adv', tone:'adv' };
     if (noNextResults.every(r => !r.top2)) return { label:'Out', tone:'out' };
-    return { label:'In the mix', tone:'if' };
+    const top2 = noNextResults.filter(r => r.top2);
+    const helpfulPerMatch = new Map();
+    for (const sc of top2) {
+      for (const o of sc.others) {
+        if (!helpfulPerMatch.has(o.matchN)) helpfulPerMatch.set(o.matchN, new Set());
+        helpfulPerMatch.get(o.matchN).add(o.idx);
+      }
+    }
+    const helpDescs = [];
+    for (const om of otherMatches) {
+      const indices = helpfulPerMatch.get(om.n);
+      if (!indices || indices.size === 3) continue;
+      const desc = describeHelp(om, indices);
+      if (desc) helpDescs.push(desc);
+    }
+    if (!helpDescs.length) return { label:'In the mix', tone:'if' };
+    return { label:'Adv if ' + helpDescs.join(' + '), tone:'if' };
   }
 
   // Find the easiest T-next outcome that still leads to top 2 (W > D > L).
@@ -1638,7 +1655,7 @@ function renderCardChips(yellow, red, penalty) {
 function renderLiveExpandedCard(m) {
   const showScore = (m.aScore != null && m.bScore != null);
   const statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
-  const scores = window.__currentScores || {};
+  const scores = window.__completedScores || {};
   const cardsA = renderCardChips(m.aYellow||0, m.aRed||0, m.aPenalty||0);
   const cardsB = renderCardChips(m.bYellow||0, m.bRed||0, m.bPenalty||0);
   const colA = '<div class="tcode-col"><span class="tcode">'+m.aCode+'</span>'
@@ -1694,7 +1711,7 @@ function renderTodayCard(m) {
   if (m.live) statusHtml = '<span class="live-dot"></span>'+(m.statusText||'LIVE');
   else if (m.completed) statusHtml = 'FT';
   else statusHtml = fmtTime12Short(m.time);
-  const scores = window.__currentScores || {};
+  const scores = window.__completedScores || {};
   const fateA = m.placeholder ? '' : teamFateBadge(m.aCode, m.group, scores);
   const fateB = m.placeholder ? '' : teamFateBadge(m.bCode, m.group, scores);
   let teamA, teamB;
@@ -2024,7 +2041,11 @@ async function update() {
 
   // Compute match scores once per render — needed by today cards (for fate
   // badges) and the leaderboard.
+  // - __currentScores: includes live games as provisional (used by pool standings)
+  // - __completedScores: only finished matches (used for fate badges and
+  //   advancement scenarios, so live games are treated as variable, not locked)
   window.__currentScores = buildMatchScores(true, null);
+  window.__completedScores = buildMatchScores(false, null);
 
   // Render
   renderTodayPanel(now, todaysEnriched);
