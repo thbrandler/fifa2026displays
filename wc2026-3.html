@@ -1528,6 +1528,37 @@ function resolveR16Source(text, scores, bestThirdMap) {
   return { code: res.winnerCode, projected: res.projected };
 }
 
+// Unified resolver for ANY KO match side. Tries group-based placeholders first
+// (Winners X / Runners-up X / Best 3rd), then bracket-based (Winner M{n}).
+// Returns {code, projected} | null.
+function resolveAnyKoSide(text, sourceMatchN, scores, bestThirdMap) {
+  const r32 = resolveKoPlaceholder(text, scores, bestThirdMap, sourceMatchN);
+  if (r32) return r32;
+  return resolveR16Source(text, scores, bestThirdMap);
+}
+
+// When a KO side can't be resolved to a real team yet, produce a compact
+// human-readable label describing what we're waiting on. Used as fallback so
+// the card communicates the matchup, not just "Winner M73".
+//   "Winners A"      → "WA"
+//   "Runners-up B"   → "RB"
+//   "Best 3rd (...)" → "3rd"
+//   "Winner M73"     → recurse one level: e.g. "RA/RB"
+function describeKoSource(text) {
+  let m = text.match(/^Winners ([A-L])$/);
+  if (m) return 'W' + m[1];
+  m = text.match(/^Runners-up ([A-L])$/);
+  if (m) return 'R' + m[1];
+  m = text.match(/^Best 3rd \(.+\)$/);
+  if (m) return '3rd';
+  m = text.match(/^Winner M(\d+)$/);
+  if (m) {
+    const src = MATCHES.find(x => x.n === parseInt(m[1], 10));
+    if (src) return describeKoSource(src.aName) + '/' + describeKoSource(src.bName);
+  }
+  return text;
+}
+
 function renderR16Panel() {
   const list = document.getElementById('r16-list');
   if (!list) return;
@@ -1570,7 +1601,11 @@ function renderR16Card(m, scores, bestThirdMap) {
   }
 
   const sideHtml = (res, placeholder, right) => {
-    if (!res || !T[res.code]) return '<span class="r16-placeholder">'+placeholder+'</span>';
+    if (!res || !T[res.code]) {
+      // Projection couldn't resolve — describe the underlying R32 matchup
+      // (e.g. "RA/RB") rather than the literal "Winner M73" which is opaque.
+      return '<span class="r16-placeholder">'+describeKoSource(placeholder)+'</span>';
+    }
     const flag = '<img class="r16-flag" src="https://flagcdn.com/w80/'+T[res.code][1]+'.png" alt="">';
     const codeSpan = '<span class="r16-code">'+res.code+'</span>';
     const est = res.projected ? '<span class="r16-est">est</span>' : '';
@@ -2162,7 +2197,39 @@ async function update() {
     ...(espnCache.get(today.replace(/-/g,'')) || []),
     ...(espnCache.get(dateStr(tmrw).replace(/-/g,'')) || []),
   ];
-  const todaysEnriched = todaysStatic.map(m => enrich(m, todaysEvents));
+
+  // Compute match scores FIRST — needed to resolve KO placeholder labels
+  // (Runners-up A → actual team code) before enrich() tries to match ESPN
+  // events by aCode/bCode. Without this, today's R32 cards would render as
+  // "Runners-up A vs Runners-up B" text and live scores wouldn't attach.
+  // - __currentScores: includes live games as provisional (used by pool standings)
+  // - __completedScores: only finished matches (used for fate badges and
+  //   advancement scenarios, so live games are treated as variable, not locked)
+  window.__currentScores = buildMatchScores(true, null);
+  window.__completedScores = buildMatchScores(false, null);
+  window.__bestThirdMap = buildBestThirdMap(window.__completedScores);
+
+  // Resolve KO placeholders for today's matches so the today panel shows real
+  // teams (with flags + live scores) rather than the raw "Runners-up A" text.
+  const todaysResolved = todaysStatic.map(m => {
+    if (!m.placeholder) return m;
+    const aRes = resolveAnyKoSide(m.aName, m.n, window.__currentScores, window.__bestThirdMap);
+    const bRes = resolveAnyKoSide(m.bName, m.n, window.__currentScores, window.__bestThirdMap);
+    if (aRes && bRes && T[aRes.code] && T[bRes.code]) {
+      return {
+        ...m,
+        aCode: aRes.code, bCode: bRes.code,
+        aName: T[aRes.code][0], bName: T[bRes.code][0],
+        aFlag: T[aRes.code][1], bFlag: T[bRes.code][1],
+        placeholder: false,
+        _wasPlaceholder: true,
+        _aProjected: aRes.projected, _bProjected: bRes.projected,
+      };
+    }
+    return m;
+  });
+
+  const todaysEnriched = todaysResolved.map(m => enrich(m, todaysEvents));
   const anyLive = todaysEnriched.some(m => m.live);
 
   // Header
@@ -2173,14 +2240,6 @@ async function update() {
   // Today panel header
   document.getElementById('today-title').textContent = anyLive ? 'Today · Live' : 'Today';
   document.getElementById('today-date').textContent = now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
-
-  // Compute match scores once per render — needed by today cards (for fate
-  // badges) and the leaderboard.
-  // - __currentScores: includes live games as provisional (used by pool standings)
-  // - __completedScores: only finished matches (used for fate badges and
-  //   advancement scenarios, so live games are treated as variable, not locked)
-  window.__currentScores = buildMatchScores(true, null);
-  window.__completedScores = buildMatchScores(false, null);
 
   // Render
   renderTodayPanel(now, todaysEnriched);
