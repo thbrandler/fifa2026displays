@@ -1413,6 +1413,8 @@ function buildR32Scores(includeLive, groupScores, bestThirdMap) {
   }
   return out;
 }
+
+function computeRanking(matchScores) {
   return PARTICIPANTS.map((arr, idx) => {
     const name = arr[0], champion = arr[1];
     let points = 0, exact = 0, draws = 0, winners = 0;
