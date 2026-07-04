@@ -2777,11 +2777,14 @@ function showPersonModal(name) {
     if (predA == null || predB == null) continue;
     const actual = allScores[n];
 
-    // Resolve team display — placeholder matches need a lookup
+    // Resolve team display — placeholder matches need a lookup.
+    // Use resolveAnyKoSide (not resolveKoPlaceholder alone) so R16 "Winner M{n}"
+    // strings resolve too. Merge completed R32 scores so bracket lookups succeed.
     let teamDisplay;
     if (match.placeholder) {
-      const aRes = resolveKoPlaceholder(match.aName, completedGrp, bestThirdMap, match.n);
-      const bRes = resolveKoPlaceholder(match.bName, completedGrp, bestThirdMap, match.n);
+      const koScores = Object.assign({}, completedGrp, window.__completedR32Scores || {});
+      const aRes = resolveAnyKoSide(match.aName, match.n, koScores, bestThirdMap);
+      const bRes = resolveAnyKoSide(match.bName, match.n, koScores, bestThirdMap);
       const aLabel = (aRes && T[aRes.code]) ? T[aRes.code][0] : match.aName;
       const bLabel = (bRes && T[bRes.code]) ? T[bRes.code][0] : match.bName;
       teamDisplay = aLabel + ' vs ' + bLabel;
