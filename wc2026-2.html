@@ -844,20 +844,33 @@
   .sp-eliminated.sp-ready { opacity:1; transform:translateY(0); }
   .sp-elim-title {
     font-family:'Barlow',sans-serif; font-weight:800;
-    font-size:10px; letter-spacing:.24em; text-transform:uppercase;
-    color:var(--atn-red); margin-bottom:12px; text-align:center;
+    font-size:11px; letter-spacing:.24em; text-transform:uppercase;
+    color:#fff; margin-bottom:12px; text-align:center;
   }
-  .sp-elim-list { display:flex; flex-direction:column; gap:6px; }
+  /* Section subheads — colour tells the story (green = alive, red = out) */
+  .sp-elim-subhead {
+    font-family:'Barlow',sans-serif; font-weight:800;
+    font-size:9px; letter-spacing:.22em; text-transform:uppercase;
+    margin:10px 0 6px; text-align:center;
+  }
+  .sp-elim-subhead.sp-alive { color:var(--atn-green); }
+  .sp-elim-subhead.sp-out { color:var(--atn-red); }
+  .sp-elim-list { display:flex; flex-direction:column; gap:4px; }
   .sp-elim-row {
     display:flex; align-items:center; gap:8px;
-    padding:6px 10px;
+    padding:5px 10px;
     background:rgba(219,0,49,0.08);
     border-left:2px solid var(--atn-red);
+  }
+  .sp-elim-row.sp-alive-row {
+    background:rgba(0,167,127,0.08);
+    border-left:2px solid var(--atn-green);
   }
   .sp-elim-flag {
     width:22px; height:15px; object-fit:cover; flex:0 0 auto;
     filter:grayscale(1) opacity(0.7);
   }
+  .sp-alive-row .sp-elim-flag { filter:none; }
   .sp-elim-code {
     font-family:'JetBrains Mono',monospace; font-weight:700;
     font-size:12px; letter-spacing:0.05em;
@@ -865,6 +878,7 @@
     text-decoration-color:var(--atn-red);
     flex:0 0 auto; min-width:36px;
   }
+  .sp-alive-row .sp-elim-code { text-decoration:none; }
   .sp-elim-names {
     font-family:'Barlow',sans-serif; font-weight:500;
     font-size:10px; letter-spacing:0.05em;
@@ -877,6 +891,15 @@
     font-size:11px; letter-spacing:.18em; text-transform:uppercase;
     color:var(--atn-green); text-align:center;
   }
+  /* "Who's next?" teaser at the foot of the list */
+  .sp-elim-next {
+    margin-top:14px; text-align:center;
+    font-family:'Barlow',sans-serif; font-weight:800;
+    font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    color:#fff;
+    text-shadow:0 0 18px rgba(0,167,127,.55);
+  }
+  .sp-elim-next em { color:var(--atn-green); font-style:normal; }
 
   @keyframes sp-fadeup {
     from { opacity:0; transform:translateY(10px); }
@@ -899,7 +922,7 @@
     <div class="sp-welcome">Welcome to the</div>
     <div class="sp-ko">Knock<em>-</em>Outs</div>
     <div class="sp-ball">⚽</div>
-    <div class="sp-sub">Round of 16 &middot; Begins Today</div>
+    <div class="sp-sub">Round of 16</div>
     <div class="sp-eliminated" id="sp-eliminated" aria-hidden="true"></div>
   </div>
   <div class="sp-skip">Tap anywhere to skip</div>
@@ -2794,8 +2817,12 @@ function showGameModal(matchN) {
   if (match.placeholder) {
     const completedGrp = window.__completedScores || buildMatchScores(false, null);
     const bestThirdMap = window.__bestThirdMap || {};
-    const aRes = resolveKoPlaceholder(match.aName, completedGrp, bestThirdMap, match.n);
-    const bRes = resolveKoPlaceholder(match.bName, completedGrp, bestThirdMap, match.n);
+    // Use resolveAnyKoSide so R16 "Winner M{n}" placeholders resolve too
+    // (resolveKoPlaceholder alone handles only Winners/Runners-up/Best 3rd).
+    // Merge R32 completed scores so bracket lookups can find R32 winners.
+    const koScores = Object.assign({}, completedGrp, window.__completedR32Scores || {});
+    const aRes = resolveAnyKoSide(match.aName, match.n, koScores, bestThirdMap);
+    const bRes = resolveAnyKoSide(match.bName, match.n, koScores, bestThirdMap);
     if (aRes && T[aRes.code]) { aCode = aRes.code; aFlag = T[aRes.code][1]; }
     if (bRes && T[bRes.code]) { bCode = bRes.code; bFlag = T[bRes.code][1]; }
     aDisp = aCode || match.aName;
@@ -2963,19 +2990,18 @@ function renderChampionStrip() {
   document.getElementById('champ-strip').innerHTML = html;
 }
 
-/* Splash: populate the "champion picks eliminated" section once ESPN data
-   has loaded. Called from update() after the ranking/strip renders. Guards
-   against running before data is present (would false-positive as "all
-   alive") and against running after the splash has been dismissed. */
+/* Splash: populate the champion-picks status section once ESPN data has
+   loaded. Shows two subsections — "Still Alive" (green) and "Knocked Out"
+   (red) — followed by a "Who's next?" teaser. Called from update() after
+   the ranking/strip renders. Guards against running before data is present
+   (would false-positive as "all alive") and after splash dismissal. */
 function renderSplashEliminated() {
   const el = document.getElementById('sp-eliminated');
   if (!el) return;
   const splash = document.getElementById('splash');
   if (!splash) return;
-  // Skip if splash is hidden (desktop/TV) or already dismissed
   if (getComputedStyle(splash).display === 'none') return;
   if (splash.classList.contains('s-done')) return;
-  // Need ESPN data before we can determine eliminations
   if (!espnCache || espnCache.size === 0) return;
   if (window.__splashElimDone) return;
   window.__splashElimDone = true;
@@ -2989,41 +3015,55 @@ function renderSplashEliminated() {
     byChamp[code].push(arr[0]);
   }
 
+  const alive = [];
   const eliminated = [];
   for (const [code, names] of Object.entries(byChamp)) {
     if (isTeamEliminated(code)) eliminated.push({code, names});
+    else alive.push({code, names});
   }
   // Most-picked first, then alphabetical by country name
-  eliminated.sort((a, b) => {
+  const sortFn = (a, b) => {
     if (b.names.length !== a.names.length) return b.names.length - a.names.length;
     const nA = T[a.code] ? T[a.code][0] : a.code;
     const nB = T[b.code] ? T[b.code][0] : b.code;
     return nA.localeCompare(nB);
-  });
+  };
+  alive.sort(sortFn);
+  eliminated.sort(sortFn);
 
-  let html;
-  if (eliminated.length === 0) {
-    html = '<div class="sp-elim-safe">All champion picks still alive</div>';
-  } else {
-    html = '<div class="sp-elim-title">Champion picks eliminated</div><div class="sp-elim-list">';
-    for (const {code, names} of eliminated) {
-      const flag = T[code] ? T[code][1] : '';
-      // First names only, keeps the row on one line on narrow phones
-      const firstNames = names.map(n => htmlEscape(n.split(' ')[0]));
-      const nameStr = firstNames.join(', ');
-      html += '<div class="sp-elim-row">'
-        + (flag ? '<img class="sp-elim-flag" src="https://flagcdn.com/w40/' + flag + '.png" alt="">' : '')
-        + '<span class="sp-elim-code">' + htmlEscape(code) + '</span>'
-        + '<span class="sp-elim-names">' + nameStr + '</span>'
-        + '</div>';
-    }
+  const buildRow = (entry, isAlive) => {
+    const flag = T[entry.code] ? T[entry.code][1] : '';
+    const firstNames = entry.names.map(n => htmlEscape(n.split(' ')[0]));
+    const nameStr = firstNames.join(', ');
+    return '<div class="sp-elim-row' + (isAlive ? ' sp-alive-row' : '') + '">'
+      + (flag ? '<img class="sp-elim-flag" src="https://flagcdn.com/w40/' + flag + '.png" alt="">' : '')
+      + '<span class="sp-elim-code">' + htmlEscape(entry.code) + '</span>'
+      + '<span class="sp-elim-names">' + nameStr + '</span>'
+      + '</div>';
+  };
+
+  let html = '<div class="sp-elim-title">Champion Picks</div>';
+
+  if (alive.length > 0) {
+    html += '<div class="sp-elim-subhead sp-alive">Still Alive &middot; ' + alive.length + '</div>';
+    html += '<div class="sp-elim-list">';
+    for (const e of alive) html += buildRow(e, true);
     html += '</div>';
   }
+
+  if (eliminated.length > 0) {
+    html += '<div class="sp-elim-subhead sp-out">Knocked Out &middot; ' + eliminated.length + '</div>';
+    html += '<div class="sp-elim-list">';
+    for (const e of eliminated) html += buildRow(e, false);
+    html += '</div>';
+  }
+
+  html += '<div class="sp-elim-next">Who\'s <em>next?</em></div>';
+
   el.innerHTML = html;
 
-  // Delay the fade-in so it lands after the KO hero animation completes
-  // (last existing element — .sp-sub — finishes at 2.55s). If update() takes
-  // longer than that, show as soon as ready.
+  // Delay the fade-in so it lands after the KO hero animation completes.
+  // If update() takes longer than that, show as soon as ready.
   const elapsed = Date.now() - (window.__splashStart || Date.now());
   const wait = Math.max(0, 2600 - elapsed);
   setTimeout(() => el.classList.add('sp-ready'), wait);
