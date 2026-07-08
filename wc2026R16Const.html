@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WC 2026 Pool — Updating R16</title>
+<title>WC 2026 Pool — Updating QF through Final</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -208,6 +208,40 @@
     text-decoration: line-through;
     text-decoration-color: rgba(219,0,49,0.6);
   }
+  .elim-flags {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 8px;
+  }
+  .elim-flag {
+    position: relative;
+    width: 44px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+  .elim-flag img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 1px solid var(--rule);
+    opacity: 0.45;
+    filter: grayscale(60%);
+  }
+  .elim-flag::after {
+    content: '\00D7';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--alert);
+    text-shadow: 0 0 4px rgba(0,0,0,.7);
+    pointer-events: none;
+  }
 
   /* ── WATCH STRIP (Brazil callout) ─────────────────────── */
   .watch-strip {
@@ -369,7 +403,7 @@
       <div class="hero-eyebrow">FIFA World Cup 2026 &nbsp;·&nbsp; ATN Office Pool</div>
       <div class="hero-headline">
         UPDATING
-        <small>Round of 16 Predictions</small>
+        <small>QF Scores &middot; SF through Final Predictions</small>
       </div>
     </div>
     <div class="hero-ball">
@@ -400,7 +434,7 @@
         <span class="dot"></span>
         Bets Being Recorded
       </div>
-      <div class="status-sub">R16 predictions incoming</div>
+      <div class="status-sub">QF scores + SF/Final/3rd place picks incoming</div>
     </div>
     <div class="status-block">
       <div class="status-label">Pool Participants</div>
@@ -408,31 +442,36 @@
         <span class="mono">25</span>
         Active Entries
       </div>
-      <div class="status-sub">No dropouts this round</div>
+      <div class="status-sub">Full field, no dropouts</div>
     </div>
     <div class="status-block">
       <div class="status-label">Stage</div>
       <div class="status-value">
-        <span class="mono">R16</span>
-        Knockout Round
+        <span class="mono">QF &rarr; F</span>
+        Final Rounds
       </div>
-      <div class="status-sub">8 matches remaining</div>
+      <div class="status-sub">Last bet round of the tournament</div>
     </div>
     <div class="status-block">
       <div class="status-label">Champion Picks</div>
       <div class="status-value">
         <span class="dot dot-alert"></span>
-        1 Eliminated
+        9 Eliminated
       </div>
-      <div class="status-sub"><span class="elim">Germany</span> &nbsp;is out of the running</div>
+      <div class="elim-flags">
+          <span class="elim-flag"><img src="https://flagcdn.com/w80/de.png" alt="GER"></span>
+          <span class="elim-flag"><img src="https://flagcdn.com/w80/br.png" alt="BRA"></span>
+          <span class="elim-flag"><img src="https://flagcdn.com/w80/pt.png" alt="POR"></span>
+          <span class="elim-flag"><img src="https://flagcdn.com/w80/us.png" alt="USA"></span>
+        </div>
     </div>
   </div>
 
-  <!-- Brazil watch strip -->
+  <!-- Champion watch strip -->
   <div class="watch-strip">
-    <img class="watch-flag" src="https://flagcdn.com/w160/br.png" alt="Brazil" />
-    <div class="watch-text">Germany's already out. <strong>Is Brazil next?</strong> All eyes on their R16 matchup.</div>
-    <div class="watch-tag">On Watch</div>
+    <img class="watch-flag" src="https://flagcdn.com/w160/es.png" alt="Spain" />
+    <div class="watch-text"><strong>9 of 25</strong> champion picks are eliminated. Spain (9 picks) and France (6) carry the field.</div>
+    <div class="watch-tag">Champion Watch</div>
   </div>
 
   <!-- Footer -->
