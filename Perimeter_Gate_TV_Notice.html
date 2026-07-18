@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perimeter Gate Notice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stage-w: 1920;
+    --stage-h: 1080;
+    --green: #00A77F;
+    --green-dark: #006A4D;
+    --ink: #0C1512;
+    --amber: #E6A300;
+    --red: #DB0031;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ink);
+    overflow: hidden;
+    font-family: 'Barlow', 'URW DIN', sans-serif;
+  }
+
+  /* Fills the actual browser/TV viewport at any resolution, then centers
+     the fixed 1920x1080 design and scales it uniformly to fit. This keeps
+     every proportion, font size, and line-up exactly as designed whether
+     the display is a 1080p TV, a 4K TV, or an ultrawide PC monitor. */
+  #stage-outer {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #stage {
+    width: calc(var(--stage-w) * 1px);
+    height: calc(var(--stage-h) * 1px);
+    flex-shrink: 0;
+    transform-origin: center center;
+    background: #FFFFFF;
+    color: #18181B;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .masthead {
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 64px;
+    height: 128px;
+    flex-shrink: 0;
+  }
+  .masthead-left { display: flex; align-items: center; gap: 32px; }
+  .masthead-left img { height: 52px; display: block; }
+  .masthead-divider { width: 1px; height: 56px; background: rgba(255,255,255,0.25); }
+  .masthead-title {
+    font-size: 26px; font-weight: 700; letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.7); text-transform: uppercase;
+  }
+
+  .rule { height: 4px; background: var(--green); flex-shrink: 0; }
+
+  .body-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 760px;
+    gap: 56px;
+    padding: 48px 64px 40px 64px;
+    min-height: 0;
+  }
+
+  .left-col { display: flex; flex-direction: column; min-height: 0; }
+
+  .status-row { display: flex; align-items: center; gap: 20px; }
+  .now-in-service {
+    background: var(--green); color: #FFFFFF; font-size: 24px; font-weight: 700;
+    letter-spacing: 0.12em; padding: 10px 20px;
+  }
+  .effective-date {
+    font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700;
+    color: #52525B; letter-spacing: 0.06em;
+  }
+
+  .headline {
+    font-size: 68px; font-weight: 800; letter-spacing: 0.05em; line-height: 1.02;
+    color: var(--ink); margin-top: 18px; text-transform: uppercase;
+  }
+  .subhead {
+    font-size: 28px; line-height: 1.35; color: #3F3F46; margin-top: 14px;
+    max-width: 900px; text-wrap: pretty;
+  }
+
+  .hours-block {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 28px;
+    background: #E5E7EB; border: 1px solid #E5E7EB;
+  }
+  .hours-cell { padding: 26px 32px; }
+  .hours-cell.auto { background: var(--green); color: #FFFFFF; }
+  .hours-cell.sat { background: #FFFFFF; }
+  .hours-label { font-size: 22px; font-weight: 700; letter-spacing: 0.15em; }
+  .hours-cell.auto .hours-label { color: rgba(255,255,255,0.75); }
+  .hours-cell.sat .hours-label { color: #52525B; }
+  .hours-time {
+    font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
+    font-size: 56px; font-weight: 700; line-height: 1.1; margin-top: 12px;
+  }
+  .hours-cell.sat .hours-time { color: var(--ink); }
+  .hours-note { font-size: 24px; margin-top: 8px; }
+  .hours-cell.auto .hours-note { color: rgba(255,255,255,0.85); }
+  .hours-cell.sat .hours-note { color: #52525B; text-wrap: pretty; }
+  .sat-header { display: flex; align-items: center; gap: 14px; }
+  .temp-tag {
+    background: var(--amber); color: #FFFFFF; font-size: 18px; font-weight: 700;
+    letter-spacing: 0.1em; padding: 4px 12px;
+  }
+
+  .badge-access {
+    display: flex; align-items: center; gap: 28px; border: 1px solid #D1D5DB;
+    border-left: 4px solid var(--green); padding: 22px 32px; margin-top: 20px;
+  }
+  .badge-access svg { flex-shrink: 0; }
+  .badge-title { font-size: 24px; font-weight: 700; letter-spacing: 0.12em; color: var(--ink); }
+  .badge-body { font-size: 25px; line-height: 1.35; color: #3F3F46; margin-top: 6px; text-wrap: pretty; }
+
+  .right-col { display: flex; flex-direction: column; min-height: 0; }
+
+  .diagram-card { border: 1px solid #D1D5DB; background: #FAFAF9; padding: 28px 32px 20px 32px; }
+  .diagram-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .diagram-title { font-size: 22px; font-weight: 700; letter-spacing: 0.15em; color: #52525B; }
+  .diagram-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #A1A1AA; }
+  .diagram-card svg { display: block; margin-top: 12px; width: 100%; }
+
+  .exit-rules { margin-top: 24px; display: flex; flex-direction: column; gap: 2px; }
+  .exit-rules-title {
+    font-size: 22px; font-weight: 700; letter-spacing: 0.15em; color: #52525B;
+    padding-bottom: 12px; border-bottom: 3px solid var(--green);
+  }
+  .exit-rule {
+    display: flex; gap: 20px; align-items: baseline; padding: 18px 0;
+    border-bottom: 1px solid #E5E7EB;
+  }
+  .exit-rule-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--green);
+  }
+  .exit-rule-text { font-size: 26px; line-height: 1.35; color: #18181B; }
+
+  .prohibited {
+    display: flex; gap: 20px; align-items: center; padding: 18px 0;
+    border-left: 4px solid var(--red); background: #FDF2F4; margin-top: 14px;
+  }
+  .prohibited-tag {
+    font-size: 24px; font-weight: 700; letter-spacing: 0.1em; color: var(--red);
+    padding: 0 20px; flex-shrink: 0;
+  }
+  .prohibited-text { font-size: 25px; line-height: 1.35; color: #18181B; padding-right: 20px; text-wrap: pretty; }
+</style>
+</head>
+<body>
+
+<div id="stage-outer">
+  <div id="stage">
+
+    <!-- Masthead -->
+    <div class="masthead">
+      <div class="masthead-left">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABJ0AAAE8CAYAAABqyMCrAAAQAElEQVR4AezaiXrbOK8A0Nz//d95btXUbZx40cIFAM984ya2JRI4kCUKzv8+/EegsMB/Qf4rTCw1AgQIECBAgACBBwKzl6EPQvISAQIEhgtoOg0nN2EPgWcX9R5znRnzWXzb62fGsw8BAgQIECBAgEAcgW1N9/3xPrq+W3yP5/a876xGJ0CAwL2AptO9h2cJBG4XzK8/E4T9NMSveWy/P93QGwQIECBAgEA/ASMT2Cmwrde+P3buGmKzzLGHABQEAQKHBDSdDnHZeIbAahfG1fKdcUyZkwCB+AIiJECAQCSBr+uzSHG1iOVrbtvvLcY0BgECBG4Cmk43CT9DCWwXvNsjVGATgrk5bD8nTG9KApuABwECBAgQWE5gW3vdHislf8t5+7lS3nIlQKCPgKZTH1ejnhDYLmy3x4ndl9jl0+fz3yUSliQBAgQIECBAYKDA5yrr89+B04ad6lPiv//CBigwAgTCC2g6XS2R/S8J3C5k289LAy2482Z2eyyYvpQ7CNyOJz8JECBAoL9Ah9O4IS8I3Cp+YYjSu/IpXV7JvRG4Hf+/f/rnsICm05sDzNt9BG5Hap/R1xuV53o1lzEBAgQIECBwXcAa6phhNK9j0duaAIEZAppOM9QXntOFqm/xb77bz74zGZ0AAQIECBAgcCeQ6sm2VtoeqYIOFOxmtz0ChSQUAgSCCmg6BS1MtbC2i9L2qJZX5Hw27+0ROUaxESBAgEAvAeMSIPBIYFsbbY9H73ntuMBmuT2O72kPAgRWEdB0WqXSk/LcLkLbY9L0pv0lwP8Xgv8JzBYwPwECBAhMFdjWQ9tjahCFJ99st0fhFKVGgMBJAU2nk3B2ey2wXXS2x+utvDtKYKvF9hg1X/R5xEeAAAECBAisI2ANNK7WrMdZm4lAFgFNpyyVShTnwYtNoszyh7rVZnvkz0QGBAgQIECAAIH3AtY9741ab7GZb4/W4xqPAIGcAt+aTjmTEHUMge3isj1iRCOKVwLq9ErHewQIECBAgEB2gW2tsz2y55E5fv4ZqidGAv0FNJ36Gy8xg4tKvjJvNdse+SIXMQECBAgQIEDguUDa9c3zlNK+oxZpSydwAs0ENJ2aUa450HYh2R5rZl8ja/WrUUdZECBAgEBbAaPlFLCuiVe3rSbbI15kIiJAYISAptMI5aJzuHjUKexWy+1RJyOZECBQTEA6BAgQeCtgLfOWaOoG6jOV3+QEpgloOk2jzz2xi0bu+j2LXl2fyXj9XsAzAgQIECAQS8AaJlY9nkWjTs9kvE6groCmU93adslsu1Bsjy6DG/ScQOO91LcxqOEIECBAgACBrgLWLl15mw+uXs1JDUggtICmU+PyVB7OBaJyde9zU+t7D88IECBAgACBmALWLDHr8i4qdXsn5P0sAuJ8L6Dp9N7IFr8EXBh+ISz2/1bz7bFY2tIlQIAAAQIEkghYpyQp1JMwO9TvyUxeJkBgpoCm00z9JHO7ICQpVKcw1b8TrGEJECBAgEBpgb7JWZ/09R01ujqOkjYPgXkCmk7z7FPM7EKQokzdg3QcdCc2AQECBPoKGJ1AIQHrkkLF/JWKev5C8D+BwgKaToWLezU1F4CrgrX2dzzUqqds5gqYnQABAgQIEPgnYJ35z8JvBKoJaDpVq2ijfJz4G0EWG6bocVGsStIhQIAAAQJ1BaxF1LaugMwI1BTQdKpZ10tZzb2YXwrdzgMEHB8DkE1BgAABAgQI/BCwBvlBUu4FNS5XUgkR+HjddAK0nIAT/XIlP5Ww4+QUm50IECBAgAABAgTeCFhnvgHq+baxCXQQ0HTqgJp1SCf4rJWbE7fjZY67WQkQIECAwIoCK647VqzzLWf1vkn4SSC/gKZT/ho2ycCJvQmjQQgQIECAAIGaArKaKGCdOhF/4tTqPhHf1AQaCmg6NcTMOpQTetbKzY/bsTO/BiIgsKaArAkQIEBgBQFrzRWqLMfqAppO1Sv8Jj8n8jdA3n4r4Bh6S1R/AxkSIECAAIFOAtYZnWATDesYSFQsoRJ4IKDp9ADFSwQyC8yI3WJghro5CRAgQIAAAQJrCFhrrlFnWdYU0HTqW9fQozt5hy5PuuAcT+lKJmACBAgQIBBawNoidHkER4DATwGvPBDQdHqAssJLLuIrVHl8jo6r8eZmJECAAAECBAisIHB8nbmCihwJxBfQdIpfo+YROmE3JzUgAQIECBAgQIDAK4GD71mvHgRbZHPHxSKFlmYpAU2nUuWUDIH5AhYD82sgAgIECLwT8D4BAgSyClhrZq2cuFcV0HRarPJO0osVfFK6jrNJ8KbNKiBuAgQIECBA4ICAteYBLJsSmCyg6TS5ACOnd3IeqW2uvAIiJ0CAAAECBGYKWLPO1M8zt+MkT61EuraAptPa9Y+fvQjTClgIpC2dwAkQIECAAAECKQSsN1OUSZCLCxxqOi1ulTp9J+TU5UsbvOMubekEToAAAQIEpghYO0xhNymBhwJeJNBCQNOphWLwMVy8gxdIeAQIECBAgAABAgReC3j3iYB7nScwXiYQREDTKUghhEGgqoCFQNXKyosAAQIrC8idAIFIAtabkaohFgL3AppO9x7lnjkBlytpyoQchynLJmgCeQRESoBACQHrhRJlnJaE42cavYkJvBTQdHrJk/tNJ97c9RM9gawC4iZAgAABAgQIzBBw/zND3ZwEXgtoOr328S6B7AJh4rcICFMKgRAgQIAAAQIEygpYc5YtrcSSCmg6DS3cuMmcbMdZm4kAAQIECBAgQIAAAQIECNwLeLYJaDptCh4ECAwR0AwdwmwSAgQIECCQTsAaIV3JQgf88HgKHbHgCNQV0HQqWFsn2YJFLZSS47NQMaVCgAABAgROCtiNQG8Ba87ewsYnsE9A02mfk60IECBAgAABAlUF5EWAAIGSAhpPJcsqqWQCmk7JCvYuXCfWd0LejyDgOI1QBTHEFRAZAQIECBAg0ErAurOVpHEInBPQdDrnZi8CBFYRkCcBAgQIECBAgEBqAY2n1OUTfHIBTafkBfwa/gon06/5+j23gOM1d/1ET4AAAQIEWglYE7SSNA4BAgTiCVxpOsXLRkQECBAgQIAAAQIECBAgQOCbgObmN5DjT+1B4JSAptMptng7OYnGq4mI3gs4bt8b2YIAAQIECBAg8FPAK2cErD3PqNmHwDUBTadrfvYmQIAAAQIECBBYXUD+BAikEdB4SlMqgRYR0HQqUEgnzgJFXDgFx+/CxZc6gU4ChiVAgAABAq8ErD9f6XiPQFsBTae2nkYjQIAAgXsBzwgQIECAAAEC4QQ0nsKVREBFBTSdkhfWyTJ5AYeHb0ICBAgQIECAAAECBAgQIDBGQNNpjPPjWbxKgMBvAc3T3wz+IUCAAAECBAgQGChgDToQ21QfH4saaDolLryTZOLiCZ0AAQIECBAgQODDetZBMEvgNq9j8CbhJ4E+AppOfVyNSoDAQQEX/INgNidAgAABAnUEZEJgqoB16FR+kxcX0HRKWmAnxqSFEzYBAgQIEAgvIEACBAisJ+D+ar2ay3iMgKbTGGezECCwQ8DFfgeSTdYTkDEBAgQIECAwRMBadAizSRYT0HRKWHAnw4RFE3IZAYkQIECAAAECBAgQIECAwD4BTad9TraKKSCqggKaqgWLKiUCBAgQIECAQBIBa9EkhRJmGoGGTac0OQuUAAECBAgQIECAAAECBAg8FNB4esjy7UVPCewT0HTa5xRmKyfAMKUQSEcBx3lHXEMTIECAAAEC9QRk1FzAerQ5qQEXFdB0WrTw0iZAgAABAgQIEOgjYFQCBGoIaDzVqKMs5gpoOs31PzS7k94hLhsTIECAAIFNwIMAAQIECJwWcA92ms6OBH4LaDr9ZvAPAQLRBFzgo1WkVTzGIUCAAAECBAgQIEBgFQFNpySVdgOepFDZwhQvAQIECBAgQIAAAQIvBdyLveTxJoGXAppOL3nGvmk2AgTuBVzg7z08I0CAAAECBAgQmCNgXTrHvfKsq+Sm6ZSg0k5wCYokRAIECBAgQIAAAQIEsgrsitt92S4mGxG4E9B0uuPwhACBaAIu7tEqIh4CBAgQINBbwPgE4gpYm8atjchiCmg6xazL36ic1P5S+IUAAQIECBCYIWBOAgQIELgTcI92x+EJgZcCmk4vebxJgEAEARf2CFUQQxQBcRAgQIAAAQIECBDIIqDplKVS4iRAIKKAmAgQIECAAAECBBYU8KXogkWX8ikBTadTbGN2ciI76mz7ygI+D5WrKzcCBAgQIECAQD4B69N8NRPxeIF+TafxuZiRAAECBAgQIECAAAECBAgME9B4+kPtB4EnAppOT2Bmv+zkNa8C/7fzv3kRrjuzz8W6tZc5AQIECBAgsF/AlmMFrFHHepstl4CmU656ibajwK3XtHeKo9vvHdd2BAgQIECAQCkByRAgsICAxtMCRZbiKQFNp1NsfXdywurr+330q82jq/t/j8dzAgQIEOgpYGwCBAgQIECAAIFRAppOo6TNE1Jgaxi1CqzlWK1iqjiOpmyxqkqHAAECBAgQIFBEwDq1SCGl0VRA06kp5/XBnKiuG84cIXvjaaaduQkQIECAAAECBAhkF3A/l72C4m8toOnUWrTdeEbqLKBB1Bm44/Au5h1xDU2AAAECBAgQIHBJwFr1Et+qO5fNW9OpbGkl9kqgZ8Op59ivcvIeAQIECBAgQIAAAQItBK6PofF03dAINQQ0nQLV0YkpUDEuhqLxdBFwx+4+LzuQbEKAAAECBCoIyIFAUgHr1aSFE3ZTAU2nppwGyyCgIZShSmKcIbB9NjwIfBWYcRxWnfOra/bfxd9GoOqxLi8CBO4FNJ7uPTxbT0DTKUjNnYyCFKJhGNuStOFwhnog4HPzAMVLqwnIlwABAgQIECBAgEBYAU2nsKURWA8BjaAeqsb8J+A3AgQIECBAgAABAvcCvii99/BsLQFNpwD1dhLqVIQAw2py9S+Cz09/YzMQIECAAAECBAhcE7BmveZn77wCw5pOeYlEXkVAA6hKJeVBgAABAgQIECBAIJ/ASo2nfNURcS8BTadesjvHdeLZCWUzAgQIECBAgAABAgTOCNgnkID7v0DFEMoQAU2nIcwmWVnAX1j1r76Ld39jMxAgQIBAKwHjECCwuoC16+pHwFr5azpNrLeTzTh8jZ9x1mYiQIBAKgHBEiBAgAABAgQIdBPQdOpGa2AC/wQ0vf5Z9PpNE7eX7NhxzUaAAAECBAgQWEHA2nWFKstxE9B02hQ8Sgto+Jwurx0JECBAgAABAgSSCmxr4O2RNPwlwtZ4WqLMyyep6TTpEDh+gpkUqGmbCbjoN6N8OpDP1VMabxAgQIAAAQKLCGxrzu1xS3f7fXvcnvsZS8D6NVY94kRTJxJNpzq1lAkBAgQIECBAgAABAosKbI2l7fEs/e297fHsfa+/EOj8lsZTZ2DDTxXQdJrA76QyDt2FdZx1lJl8vqJUQhwE+HngNQAAEABJREFUCBAgQKCPgFF/ChxZ8x7Z9udMXuklYA3bS9a4swU0nWZXwPxLCbjIL1VuyRIgQGAFATkSIJBQwJo0YdGETCCpgKbT4MLpYI8DdzEdZx1tJp+zaBURzzgBMxEgQIDAagJn17xn91vNd2S+1rAjtc01SkDTaZS0eQj8EXCB/wOxwg85EiBAgAABAgQIEDggoPF0AMumKQQ0nQaWyQlkHPajxs642c1EgAABAgQIECBAIL6ANXPMGrlvjFkXUZ0TmNV0OhetvQgUEXCB719IF+v+xmYgQIAAAQIE8gtYl8asYbG1bExkUQ0R0HQawvzx4aQxCNo0BAgQIECAAAECBAi8EPj5lsbTT5MIr7iHjFAFMVwV0HS6Kmj/cAIumuFKMi0gF+pp9CYmQIAAgb0CtiMQRMAaOkghhEGgmICmU7GCSiePgAt7nlqJlACBdQRkSoAAgZUFrE/jVd+XqPFqIqJjAppOx7xObe1EcYrt1E4ulKfYSu/k85e6vIInQIAAAQIEBgtYTw8G3zGd9ewOJJuEFdB0Clsaga0gkOuivkJF5EiAAAECBAgQIGCNGu8Y0HiKVxMR7RPQdNrndHqrbieH0xHV3dHFsW5tr2bmc3hV0P4ECBAgQIAAAQKzBaxpZ1dg4vyJp9Z0Slw8odcQ0CyrUUdZECBAgAABAgQqCVijPq/mzHc0nmbqm/uMgKbTGbWd+zgh7ISyGYEBAj6PA5BNQYAAAQIExguYsaOAxlNHXEMTWERA02mRQldP0wWxeoXlR4AAAQI5BERJgEA1AevseBX1ZWq8mojouYCm03ObS+84EVziW25nF/PlSi5hAmMEzEKAAAECBBoIWKs2QGw8hPvNxqCG6yag6dSN1sCjBFwER0nnn2f2xTm/oAwIECBAgACBVQWsueNV3to2Xk1E9FNA0+mnyeVXfPgvE44YINwcLuThSiIgAgQIECBAgACBLwLWq18wgvzq3jNIIYTxVCBI0+lpfN4g8FLAhe8ljzcfCLgwP0DxEgECBAgQIECAQFqBfOvbtNQCPyGg6XQCzS4EegloovWSNS4BAgQIECBAgMBDgYMvWq8eBLM5gcUFNJ0aHwC6zI1BDUegg4DPaQdUQxIgQIBAEwGDEMggoPEUr0rWt/FqIqJPAU2nTwf/JhRwsUtYNCETIEAgl4BoCRAgQOCJgLX4E5iJL2s8TcQ39VMBTaenNMff8CE/bmaPnwIu4D9Nerzi89pDtfeYxidAgAABAgQiCVi3RqrGZyzWuJ8O/o0joOkUpxYiOSDgAncAq9emxiVAgAABAgQIEFhewLo83iGg8RSvJitHpOnUqPqzP9iN0jBMEAEX7zGF8Lkd42wWAgQIECBAoLaAtWu8+lrnxqtJy4gyjaXplKlaYv0t4KL2m8E/BAgQIECAAAECBMIILLxGD1MDgRCIKKDp1KAqusgNEA3xQ8CF+weJFwgQIECAAAECbwS8TYDATcB96k3Cz5kCmk4z9c1NgMB0ARfj6SUQAAEClQXkRoDAUgK+NI1XbmvdeDVZLSJNp9UqnjxfF7LkBRQ+AQJTBUxOgAABAgR6C1iv9xY+Pr7G03Eze7QT0HS6aOkDfBHQ7i8FXLRf8jR7c9LnuFn8BiJAgAABAgQIRBKwho1Ujc9YrHc/Hfw7XkDTaby5GU8K9L14nQzKbgQIECBAgAABAgQI/BCwdv9BMv0FjafpJVgygJhNpySl8KFNUqjkYbpgjymgz/MYZ7MQIECAAAEC6whYx65T60uZ2rm0gKZT6fLWSc4Fq04tZUKAAAECBAgQIBBXoHVk1vGtRa+N54vWa372Pi6g6XTc7PcePqy/GfwzSMDFegy0z/UYZ7MQIECAwG4BGxIgQKC5gDVvc1IDvhDQdHqB4y0CBAgQIECAwD8BvxEgQIDAGQFfoJ5R67uPxlNfX6P/E9B0+mex+zcf0N1UTTZ0kWrCaJCdAj7fO6EibCYGAgQIECBAII2ANX28Uln3xqtJxYg0nSpWVU4lBaJfqEuiS4oAAQIECBAgQKCZgPVsM8pmA2k8NaM00BMBTacnMM9eTvKhfBZ+utddmNKVTMAECBAgQIAAAQIEngpY3z+l8QaBswKh99N0Cl0ewRG4F3CRvvfo9UxzuZescQkQIECAAAECHx+117Qf6f6z9k1XslQBazqlKtdawboYrVVv2RIgQIAAAQIEmgsYMKyAtX6s0mg8xapHpWg0nQ5U0wfxAJZNuwm4QHejvRvY5/2OwxMCBAg0ETAIAQIEvgpY137VmP+79e/8GlSMQNOpYlXlRIAAAQIE3gvYggABAgQIECBwJ6DxdMfhSQMBTaediD58O6EabeZbj0aQhrkkMPZzfylUOxMgQIAAAQIEUgpY98crmzVwvJpkjkjTKXP1xN5PIPjILs7BCyQ8AgQIECBAgACB3QLWtruphm2o8TSMuvxEKZpOs6vgAze2Ai46Y73N9lrA5/+1j3cJECBAgAABAi0E3AO0UKwxhixqCWg61aqnbBYScGFeqNhSJUCAAAECBAjMERg6q/XtUO63k/ny9S2RDXYIaDq9QfJBewPU+G0Xmsaghmsi4DzQhNEgBAgQIHBZwAAE6gu4H4hVY+vgWPXIGI2mU8aqiZnAHwEX5T8QfhAgQGCGgDkJECBAoIuANW4X1tODajydprPjLwFNp18Iz/734Xom43UC6wk4H8SvuQgJECBAgAABAgT6CFgL93FdYVRNpxWqnCRH32gkKdS+MG1FgAABAgQIECBA4LSAe4PTdN121HjqRlt6YE2n0uW9JednZQEX5MrVlRsBAgQIECBAYF0B69x1ay/zKwKx9tV0elIPXdwnMJ1edkHpBGvYpgLOC005DUaAAAECBAgQeCuQ/j7hbYa5NrAezlWvCNFqOkWoghgIXBRwMb4IaHcCBAgQIEBgCQFJ5hSw1o1VN42nWPWIHo2m04MK+RA9QOn4kotIR1xDNxdwfmhOakACBNYVkDkBAgR2C7hn2E01ZENr4iHMJSbRdCpRRkkQ+PhwIf7wHwEClwTsTIAAAQIEYgtY78aqj8ZTrHpEjUbT6VtlfHC+gXhKgMAPgSHniR+zeoEAAQIECBAgQEDjKdYxYF0cqx4Ro9F0iliVhWLKctHIUhKeWSolTgIECBAgQIAAAQIECNQXyNh06lYVXdputAYmUE7A+aJcSSVEgAABAgQIJBHwRWusQnVeF8dKVjSHBTSdDpPZoZWAi0UrSeMQIECAAAECBAgQGCEQZw73EnFqsUWi8bQpeDwS0HR6pOI1AokFXIDHFc/FdZy1mQgQIEDggYCXCCwuYN0b6wCwNo5VjyjRaDr9qYQPyB8IPwgQIECAAIFTAnYiQIAAgfECGk/jzV/N6L76lc6a72k6rVn36Vm7OPQtAd++vkZPISBIAgQIECBAYBEBa99YhdZ4ilWP2dFoOv2qgA/FLwT/E+gqUHdw54+6tZUZAQIECBAgkEdA4ylPrUS6loCm01r1/sx28r8uCGMKwHmMs1kIECBAgAABAgQIELgX8MXsvcfUZ5MnX77p5MMw+Qg0PYECAs4jBYooBQIECBAgQCC9QIYvXdMjH0jAGvkAVuFNl286Fa5tyNRcCEKWRVAECBAgQIAAgRUF5FxQwP1GrKJqPMWqx4xolm46+QDMOOTMOVLARXectvPJOGszESBQVUBeBAgQaCNgDdzGsdUo1smtJHOOs3TTKWfJRE2AAAECBAYImIIAAQIECCQW0HiKVTyNp1j1GBnNsk0nB/3Iw+xzLif+T4fR/3IfJ97zvDIuCzMRIECAAAECBGoIWAfXqKMscgss23TKXTbRTxYwPQECBAgQIECAAAECCQQ0nuIUyRe0cWoxMpICTaeRXOY6K+Bkf1auzX782zjuGcXFdI+SbQgQIECAAAEC4wSshcdZv5vp+lr53QzejyawZNPJgR7tMBQPAQIECBAgQIAAAQLpBARM4ISA+/ETaIl3WbLplLheKUP3zULKsgmaAAECBAgQSCYgXAIEngu4J3luM+MdjacZ6nPmXK7p5OCec6CZdb6AC+24GjjPjLM2E4HAAkIjQIAAgWAC1sOxCmLNHKsevaJZrunUC9K4BAgQIBBZQGwECBAgQIAAgY8PjacP/xEYKrBU00kndeix9XsyJ/XfDGH+CVOPMCL9AnG+6WdrZAIECBAgQIDAFQFr4it6bfe1Zm7rGXG0pZpOEQsQISYxECBAgAABAgQIECBAYCUBjac41dZ4GluL0bMt03RyII8+tD786epHzP9cYMfVxXlnnLWZCBAgQIAAAQJHBQKsi4+GXHZ76+aypf1YpulUt4QyI0CAAAECBAgQIEDguoARCBCYKaDxNFO/39xLNJ0cvP0OoGcj+9bgmYzXVxNw/lmt4vIlQKCZgIEIECAwQMB9ywDkA1NYOx/ASrLpEk2nJLUQJoFhAi6uw6hNRKCMgEQIECBAgEBVAWvjqpWVVwQBTacIVRADAQKlBTp8Y1PaS3IECBAgQIAAgdECGk+jxZ/PZ+383CbjO+WbTg7Y8Yfleifs8cYtZlSnForGIECAAAECBAgQqCJgfRynku7j49TiaiT1mk5XRexPgAABAgQIECBAgAABAksKaDzFKfuuxlOccEXyRKB008lB+qTqHV92ku6I22Fo9eqA+mRI56MnMF4mQIAAAQIEyghUScQaOU4lraHj1OJsJKWbTmdR7EeAAAECBAgQIEAguYDwCRAgUEJA4yl3Gcs2nRyY4w9M3wiMNzdjLgHnpVz1Ei2BtgJGI0CAAIFMAu5tMlVLrJEFyjadIqOLjUAkARfUSNUQyzABExEgQIAAAQIE3ghYJ78BGvi2L28HYjeeqmTTyQHZ+CgxHIHOAisN7/y0UrXlSoAAAQIECGQX0HiKU0Hr6Di1OBJJyabTEQDb/hA49YKT8Sm2MDupX5hSCIQAAQIECBAgQCCYgLVynIJoPDWvRfcByzWdHITdjxkTECBwUcB56iKg3QkQIECAAAECgwXGNJ4GJ5V0OmvpXIUr13TKxV8jWidgdawhIAsCBAgQIECAwBcBvxL4JuC+5xvIxKcaTxPxD06t6XQQzOYECBBoIeBC2ULRGAQIrCQgVwIECEQQ0HiKUIXPGKynPx2i/1uq6eSgG3+4OemONzcjAQIEAggIgQABAgQIECBAgMBbgVJNp7fZ2oAAgZcCmogveQK/KTQCBAgQIECAAIFRAtbMo6Tfz+MPT94bzd6iTNPJwTb7UDL/XwG/ENgp4Ly1E8pmBAgQIECAAIFgAhpPcQpiTR2nFo8iKdN0epTc9ppHX4HtA+5RS6DvEWN0AgQIECBAgAABAjUENJ7i1HG7I9ui8YgnUKLp5ACLd2CJiACBfQLOX/ucbEWAAAECBAikE1giYI2nOGW2ro5Ti6+RlGg6fU3I7wQIECBAgAABAgQIfBfwnACBXgIaT71kj4+r8XTcrPce6ZtODqrehywMSCcAABAASURBVIjxCRDoLeA81lvY+AQCCgiJAAECBEoJaDyVKqdkGgqkbzo1tDAUAQIECCwqIG0CBAgQIECAAIEaAr7QjVVHTadY9RANAQIfH0sauDguWXZJEyBAgAABAoUE/LVTnGJaW8epReqmkwNpxIFkDgIECBAgQIAAAQIECBDYI6DxtEdpzDb6BWec2++TuunUnsOIBAgQmCfgwjjP3swECBAgQIAAgVYCzRpPrQJaeBzr6/nFT9t0cvDMP3hEQIAAAQIECBAgQGAVAXkSOCKg8XREq++2egd9fd+Nnrbp9C4x7xMgQIAAAQIECJQVkBgBAgTCC2g8hS+RAAcIpGw66VQOODJMQYDAFAHntynsJr0sYAACBAgQIEDgkYDG0yOV8a9ZY483v82Ysul0C95PAgQIEHgg4CUCBAgQIECAAIEwAhpPMUpxpvF0Zp8Y2caJIl3TSdHjHDwi2SdgKwJHBZznjorZngABAgQIECBAgMB7Aevs90att0jXdLoIYHcCBAgQIECAAAECBAgQIDBUwF87DeW+Tfbw597G097tHk7ixb8CqZpOiv63bn4hQKC4gPNd8QJLjwABAgQILCcgYY2nOMfAttbeHs8ievXes328/lggVdPpcQpeJUCAAAECBAgQIEDgkICNCRCYIqDxNIX96aRbc+nR4+kO3jgsoOl0mMwOBAgQGCOwXQDHzGQWAgRmC5ifAAECBNYR0Hhap9Yy/fhI03Ry8+VwJUCAAIFBAqYhQIAAAQIECHQV0HjqymvwQAJpmk6BzIRCgMBQgbUn03Bfu/6yJ0CAAAECBOoKaDzVra3M/gmkaDq56fpXsOm/CYAAAQIECBAgQIAAAQIECBCoL9AgwxRNpwZ5GoIAAQJpBTTe05ZO4AQIECBAgACBlwJH/trp5UDeJBBUIHzTyc1W0CNHWAQIECBAgAABAgTWFZA5gWYCGk/NKA0UUCB80ymgmZAIECBAgAABAgRCCQiGAAECuQU0nnLXT/TPBUI3nfyV0/PCeYcAgbUEnA/Xqnf6bCVAgAABAgQIHBbQeDpMZocEAqGbTgn8hEiAAIHwAgIkQIAAAQIECBDIIaDxlKNOotwvELbp5Fv9/UW0ZSoBwRI4LeC8eJrOjgQIECBAgACBNAIaT2lKJdAdAmGbTjtib7CJIQgQIECAAAECBAgQIECAQCwBjace9TDmDAFNpxnq5iRAgMBJAX/tdBLObgQIECBAgEAsAdEQILCEQMimk5uqJY49SRIgQIAAAQIECAQREAYBAvEE/LVTvJqI6LhAyKbT8TTsQYAAgXUENObXqbVMlxWQOAECBAgQ+C2g8fSbwT+JBcI1ndxMJT6ahE6AAIGSApIiQIAAAQIECMwT0HiaZ2/m6wLhmk7XUzICAQKlBST3W0CD/jeDfwgQIECAAAECSwhoPC1R5pJJhmo6uYnKd4yJmAABAgQIECBAgAABAgT6C2g89Tc2w2uBM++GajqdScA+BAgQIECAAAECBAgQIEBgBYEvjacV0pVjAYEwTSd/5VTgaJICAQJDBZw3h3KbjAABAgQIvBDwFgECBAg8EgjTdHoUnNcIECBAgAABAgQIHBawAwECBAoL+GunwsUtmJqmU8GiSokAgXUE/LXTOrXOnKnYCRAgQIAAgbYCGk9tPY3WTyBE08lNU78CG5kAAQLfBDwlQIAAAQIECBAoIKDxVKCIC6QQoum0gLMUCTwR8DKB6wIa99cNjUCAAAECBAgQyCig8ZSxamvFPL3pFOpmaa3ay5YAAQIECBAgQIAAAQIEkgtoPJ0soN2GCExvOg3J0iQECBAoLqCBX7zA0iNAgAABAsUFpHdNQOPpmp+9+wlMbTq5SepXWCMTIECAAAECBAgQOClgNwIEEgpoPCUs2gIhT206LeArRQIECAwT0MgfRm0iAoMFTEeAAAECBAgQyCkwrenk5ijnASNqAgQILC8AgAABAgQIECAQVMBfOwUtzMJhTWs6LWwudQIEGgoYigABAgQIECBAgACBfwIaT/8s/DZfYErTyV85zS98pwgMS4DAZAHn18kFMD0BAgQIECBAIICAxlOAItQPYVeGU5pOuyKzEQECBAgQIECAAAECBAgQILBD4OcmGk8/TbwyXkDTaby5GQkQINBVwF87deU1OAECBAgQeC9gCwJBBDSeghRi4TCGN53cDC18tEmdAAECBAgQIDBBwJQECBBYWUDjaeXqz899eNNpfsoiIECAQH0BDf76NU6codAJECBAgAABAgQWERjadHITtMhRJU0CBBIJCJUAAQIECBAgQKC6gL92ql7huPkNbTrFZRAZgSACwiDQUECjvyGmoQgQIECAAAECyQU0npIXMGn4w5pOGW9+ktZU2AQIECBAgAABAgQIECBA4IeAxtMPkr8v+KWPwLCmU5/wjUqAAAECrwQ0/F/peI8AAQIECBAIKiCsjgIaTx1xDf1DYEjTyU3PD3cvECBAgAABAgQIEEgiIEwCBKoJaDxVq2jcfIY0neKmLzICBAgQIECAQDIB4RIgQIAAgQYCGk8NEA3xVqB708lfOb2tgQ0IECDQVcB5uCvvh9EJECBAgAABAlkFNJ6yVi5P3N2bTnkoREqAQAEBKRAgQIAAAQIECBAgQIBAEAFNpyCFqBmGrAgQiCLgr52iVEIcBAgQIECAAIFYAv7aKVY98kbzOPKuTSc3OY/RvUqAAAECBAgQIECAAAECBLoJHBxY4+kgmM13C3RtOu2OwoYECBAg0F3AFwHdiU1AgAABAgQeCniRQAYBjacMVcoXY7emk5ubfAeDiAkQIECAAAECCwhIkQABAgSeCGg8PYHx8mmBbk2n0xHZkQABAgS6CfhCoButgU8L2JEAAQIECBCIJKDxFKka+WPp0nRyU5P/wJABAQKLCkibAAECBAgQIEBgeQGNp+UPgWYAXZpOzaIzEIHFBaRPoIeALwZ6qBqTAAECBAgQIECAAIHvAs2bToVvZr7beU6AAAECBAgQIECAAAECBEoKLP7XTiVrOiOp5k2nGUmYkwABAgQIECBAgAABAgSqCshrloDG0yz5OvM2bTr5K6c6B4ZMCBCoLeB8Xbu+siNAgEBXAYMTILCUgMbTUuVunmzTplPz6Ay4S2A7CXgQqCCw64C3EQECBAjcCXhCgAABAgR6C2z3Gr3nMH5NAU2nmnWVFQECBN4K+Gunt0RnNrAPAQIECBAgQKCkgMZTybJ2T6pZ08nNS/daPZzAB/8hixeTCrQ/npNCCJsAAQIECBAgQIBAQAHr9YBFCR5Ss6ZT8DyFF0FADAQIhBPwhUG4kgiIAAECBAgQIBBaQOMpdHniBPcrku1YadJ0ctPyS3PC/1sBJ0xrSgJdBRzXXXkNToAAAQIECBAgsKCAlAnMEmjSdJoVvHkJECBA4LqALw6uGxqBAAECBAgcELApgfQCvihOX8JhCVxuOrlZGVaru4l8yO84PCkm4PguVlDpECBAILSA4AgQIEDgjIA1+xm19fa53HRaj0zGBAgQqCfgC4R6NU2bkcAJECBAgACBNAIaT2lKNS3QS00nNynT6mZiAgQIDBEwCQECBAgQIECAAIFXAhpPr3S8d6nphG+OgA/1HPcAsy4VguN8qXJLlgABAgQIECBAILGAtXvi4nUK/XZMaDqdBrYjAQIEagn469Va9ZQNAQIECBAgQGCkwK3JMHLOcXOZ6azA6aaTm5Oz5Nf280G+5mfvXAKO91z1Ei0BAgQIECBAYIiASQgQSCNwuumUJkOBEiBAgMBuAV8o7KayIQECBAj8EfCDAAECNwFfGt8k/LwJnGo6uSm58Y396QM81ttsMQQc9zHqIAoCBNIICJQAAQIECEwVsH6fyh9i8q/HwKmmU4gsBEGAAAECXQR8sdCS1VgECBAgQIAAgfUEvjYd1stexl8FDjed3Ix85fM7AQKpBARLgAABAgQIECBAgMAQAY2nIczhJzncdAqfUdEAK35gi5ZKWh0EHP8dUN8M6QuGN0DeJkCAAAECBAgQeCtgHf+WqNwG32t+azrtStRNyC4mGxEgQIAAAQIECBAgQIAAgagCQ+P63oQYOrnJpgscajpNj3bRAHxIFy28tO8EfA7uOIY88UXDEGaTECBAgMDyAgAIECBQV2B308nNR92DQGYECBAgQIAAAQJ/BPwgQIAAgeYCvkBuThpywEd13t10CpnRAkE9KtoCaUuRwEMBn4eHLF1f9IVDV16D7xCwCQECBAgQIFBDwFq+Rh2PZqHpdFTM9gQIEFhXQOYECBAgQIAAAQIETgtoPJ2mC7/js9ruajr5pjt8fQW4pMCaST87ma2pIWsCBAgQIECAAAECuQSs53PV62q0u5pOVydZYv8OSfowdkA1JAEChwV88XCYzA4ECBAgQIAAAQIvBNLf677IbcW3XtXzbdPJzcaKh4ycCRAgQIAAAQIECBAgkENAlDkFXjUqcmYk6kcCb5tOj3byWn8BH8D+xmbIK+DzMb52voAYb25GAgQIJBUQNgECBHYLWNfvpgq74bsavmw6uckIW1eBESBAgAABAgR2CNiEAAECBAgQIDBP4GXTaV5Ya8/8rlO4to7sCXwK+Jx8Ooz81xcRDbQNQYAAAQIECBAgcCdgXX/HkerJnto9bTq5uUhVa8ESIHBCwC4ECBAgQIAAAQIECMwX2NO8mB+lCM4IPG06nRnMPtcFFv6wXcczwnICPi/jS+4LifHmZiRAgAABAgQIrCBgbZ+rynvr9bDp9N9///2XK13REiBAgAABAgQIECBAgAABAscF4uyxt5ERJ+I1IzlSp4dNpzXZZE2AQEaBIye8jPlFjNlfO0WsipgIECBAoIyARAgsLmB9X+sA0HQKVE8frkDFEAoBAgQIECBA4OPjAwIBAgQIjBdwbzzefO+MR2vzo+nkG+y91LYjQIAAAQIEBguYjgABAgQIEFhE4GhzYxGWqWmeqcmPptPUDBae/EzxFuaSOoE7AZ+fO44hTz6/oBgylUkIECBAgAABAgQWFbDOj1P4s7W4azq5iYhTUJEQOCxgBwIECBAgQIAAAQIECBQTONvsKMaQNp27plPaLAIGfiQkH6IjWrYl8FjA5+ixS89XfVHRU9fYBAgQIECAAAECN4Hoa/1bnFV/XvH/23Ry81D18JAXAQIECBAgQIAAAQIElhGQaFGBK42PoiRD0rrq/rfpNCRakxAgQKCjwNUTYsfQyg7tC4uypZUYAQIEGgkYhgABAu0ErPfbWe4ZqYW3ptMe6Y7btChix/AMTYAAAQIECFQSkAsBAgQIEEgusN1Db4/kaYQPv5Xx76aTb6rD11uABAgQIFBQQEoECBAgQIAAAQLnBFo1Rc7NXnuvlra/m061uWRHgMBKAhdOkCsxNc3VFxdNOQ1GgAABAgQIECCwU8DafyfUzs02z+2xc/Ndm2k67WLqs1HrYvaJctao5iVAgAABAgQIECBAgAABAq96xvqKAAABw0lEQVQFtvvq7fF6K+++E+hl+L9d31C/i877BAgQIECAAAECBAgQIECAQH6BpBn0apok5TgUdk87f+l0qBQ2JkAgg0DPk2aG/GfE6AuMGermJECAAIEVBORIgMB+ge0+YHvs32PtLTer7dFTQdOpp66xCRAgQIAAAQIEKgnIhQABAgQSCGyNlO2RINRpIY7y0XSaVOJRBZ6UnmkJECBAgMAAAVMQIECAAAECBJ4LbPfd2+P5Fuu9s3lsj1GZ/2+bzGO8wKgCm4fAqgLjP9Vm/Fj1YCuct6O6nUDhw0RqBC4JtPuUrTvSpQLYmcAiAl/PEIuk/CPNm8GPNzq/4C+dOgMbnsAsAfMSIECAAAECBAgQIECAwL3ArObLfRTjns3OV9NpTK3NQoAAAQIECBAgQIAAAQIECAQRuDVjtp+NQwox3JbX9pgdjKbT7AqYnwABAgQIECBAgAABAgQ6CRiWwHuBrTnz9fF+j5hbRMxB0ynmsSIqAgQIECBAgAABAvUEZESAAIEEAl+bN9vvUUPeYvv6iBinplPEqoiJAAECBAgQIDBAwBQECBAgQIDAe4GvjZ2vv7/fs+0WX+fefm87ep/R/h8AAP//LqTeBAAAAAZJREFUAwC5DoMmHiUJAQAAAABJRU5ErkJggg==" alt="ATN">
+        <div class="masthead-divider"></div>
+        <div class="masthead-title">Employee Notice</div>
+      </div>
+    </div>
+    <div class="rule"></div>
+
+    <!-- Body -->
+    <div class="body-grid">
+      <!-- Left column -->
+      <div class="left-col">
+        <div class="status-row">
+          <div class="now-in-service">NOW IN SERVICE</div>
+          <div class="effective-date">EFFECTIVE 07/18</div>
+        </div>
+        <div class="headline">The Perimeter Gate<br>Is Finished</div>
+        <div class="subhead">The new two-wing swing gate is complete and in operation, effective immediately.</div>
+
+        <!-- Hours block -->
+        <div class="hours-block">
+          <div class="hours-cell auto">
+            <div class="hours-label">AUTOMATIC HOURS &middot; MON &ndash; FRI</div>
+            <div class="hours-time">05:00 &ndash; 19:00</div>
+            <div class="hours-note">Opens 5 AM &middot; closes 7 PM, every workday</div>
+          </div>
+          <div class="hours-cell sat">
+            <div class="sat-header">
+              <div class="hours-label">SATURDAYS</div>
+              <div class="temp-tag">TEMPORARY</div>
+            </div>
+            <div class="hours-time">05:00 &ndash; 19:00</div>
+            <div class="hours-note">Until end of August due to Scout Motors project work. Other openings will be announced.</div>
+          </div>
+        </div>
+
+        <!-- Badge access -->
+        <div class="badge-access">
+          <svg width="76" height="76" viewBox="0 0 88 88" fill="none">
+            <rect x="20" y="12" width="48" height="64" stroke="#00A77F" stroke-width="3"></rect>
+            <rect x="30" y="24" width="28" height="18" fill="#00A77F"></rect>
+            <line x1="30" y1="54" x2="58" y2="54" stroke="#0C1512" stroke-width="3"></line>
+            <line x1="30" y1="64" x2="48" y2="64" stroke="#0C1512" stroke-width="3"></line>
+          </svg>
+          <div>
+            <div class="badge-title">EMPLOYEE ACCESS &middot; 24/7</div>
+            <div class="badge-body">Employees can enter at any time. A badge reader is mounted on the gate post &mdash; it is <b>intentionally discreet</b>, so look for it on the outside of the gate, on the far post. Badge in as usual.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: diagram + rules -->
+      <div class="right-col">
+        <div class="diagram-card">
+          <div class="diagram-head">
+            <div class="diagram-title">GATE LAYOUT &middot; TOP VIEW</div>
+            <div class="diagram-subtitle">TWO-WING SWING GATE</div>
+          </div>
+          <svg viewBox="0 0 696 330">
+            <!-- fence -->
+            <line x1="0" y1="90" x2="180" y2="90" stroke="#0C1512" stroke-width="6"></line>
+            <line x1="516" y1="90" x2="696" y2="90" stroke="#0C1512" stroke-width="6"></line>
+            <line x1="30" y1="90" x2="30" y2="74" stroke="#0C1512" stroke-width="3"></line>
+            <line x1="90" y1="90" x2="90" y2="74" stroke="#0C1512" stroke-width="3"></line>
+            <line x1="150" y1="90" x2="150" y2="74" stroke="#0C1512" stroke-width="3"></line>
+            <line x1="546" y1="90" x2="546" y2="74" stroke="#0C1512" stroke-width="3"></line>
+            <line x1="606" y1="90" x2="606" y2="74" stroke="#0C1512" stroke-width="3"></line>
+            <line x1="666" y1="90" x2="666" y2="74" stroke="#0C1512" stroke-width="3"></line>
+            <!-- outside / inside labels -->
+            <text x="348" y="34" text-anchor="middle" font-family="Barlow, sans-serif" font-size="20" font-weight="700" letter-spacing="3" fill="#A1A1AA">OUTSIDE</text>
+            <text x="348" y="322" text-anchor="middle" font-family="Barlow, sans-serif" font-size="20" font-weight="700" letter-spacing="3" fill="#A1A1AA">INSIDE &middot; PLANT</text>
+            <!-- swing arcs (wings swing inward) -->
+            <path d="M 348 90 A 158 158 0 0 1 190 248" fill="none" stroke="#00A77F" stroke-width="2" stroke-dasharray="7 7"></path>
+            <path d="M 348 90 A 158 158 0 0 0 506 248" fill="none" stroke="#00A77F" stroke-width="2" stroke-dasharray="7 7"></path>
+            <!-- open wing positions -->
+            <line x1="190" y1="90" x2="190" y2="240" stroke="#9FD8C8" stroke-width="8" stroke-linecap="square"></line>
+            <line x1="506" y1="90" x2="506" y2="240" stroke="#9FD8C8" stroke-width="8" stroke-linecap="square"></line>
+            <!-- closed wings -->
+            <line x1="190" y1="90" x2="344" y2="90" stroke="#00A77F" stroke-width="10" stroke-linecap="square"></line>
+            <line x1="506" y1="90" x2="352" y2="90" stroke="#00A77F" stroke-width="10" stroke-linecap="square"></line>
+            <!-- swing direction arrows -->
+            <path d="M 300 170 L 286 196 L 312 192 Z" fill="#00A77F"></path>
+            <path d="M 396 170 L 410 196 L 384 192 Z" fill="#00A77F"></path>
+            <!-- posts -->
+            <rect x="178" y="78" width="24" height="24" fill="#0C1512"></rect>
+            <rect x="494" y="78" width="24" height="24" fill="#0C1512"></rect>
+            <!-- badge reader marker on post -->
+            <circle cx="512" cy="62" r="9" fill="#FFFFFF" stroke="#00A77F" stroke-width="3"></circle>
+            <circle cx="512" cy="62" r="3" fill="#00A77F"></circle>
+            <line x1="503" y1="58" x2="448" y2="44" stroke="#00A77F" stroke-width="2"></line>
+            <text x="440" y="50" text-anchor="end" font-family="Barlow, sans-serif" font-size="20" font-weight="700" fill="#006A4D">BADGE READER</text>
+            <text x="440" y="72" text-anchor="end" font-family="Barlow, sans-serif" font-size="18" fill="#52525B">discreet, outside on the gate post</text>
+            <!-- exit vehicle keep right -->
+            <rect x="428" y="238" width="52" height="76" fill="none" stroke="#0C1512" stroke-width="3"></rect>
+            <rect x="438" y="252" width="32" height="18" fill="#0C1512"></rect>
+            <line x1="454" y1="230" x2="454" y2="204" stroke="#0C1512" stroke-width="3"></line>
+            <path d="M 454 196 L 446 212 L 462 212 Z" fill="#0C1512"></path>
+            <text x="492" y="268" font-family="Barlow, sans-serif" font-size="20" font-weight="700" fill="#0C1512">EXIT: STAY RIGHT,</text>
+            <text x="492" y="290" font-family="Barlow, sans-serif" font-size="20" font-weight="700" fill="#0C1512">KEEP YOUR DISTANCE</text>
+            <!-- camera -->
+            <rect x="640" y="104" width="34" height="18" fill="#52525B"></rect>
+            <path d="M 640 108 L 628 104 L 628 122 L 640 118 Z" fill="#52525B"></path>
+            <text x="672" y="140" text-anchor="end" font-family="Barlow, sans-serif" font-size="18" fill="#52525B">VIDEO SURVEILLED</text>
+          </svg>
+        </div>
+
+        <!-- Exit rules -->
+        <div class="exit-rules">
+          <div class="exit-rules-title">EXITING WHILE THE GATE IS CLOSED</div>
+          <div class="exit-rule">
+            <div class="exit-rule-num">01</div>
+            <div class="exit-rule-text">Stay on the <b>right side</b> so the sensor detects your vehicle.</div>
+          </div>
+          <div class="exit-rule">
+            <div class="exit-rule-num">02</div>
+            <div class="exit-rule-text">Keep your distance &mdash; both wings <b>swing toward the inside</b>.</div>
+          </div>
+          <div class="prohibited">
+            <div class="prohibited-tag">PROHIBITED</div>
+            <div class="prohibited-text">Do not push the gate open by hand. Repairs and damage will be <b>charged back</b>. The gate is video surveilled.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Scales the fixed 1920x1080 design to fit any screen (PC monitor or TV,
+  // any resolution/aspect ratio) without distorting text or layout.
+  (function () {
+    var stage = document.getElementById('stage');
+    var STAGE_W = 1920, STAGE_H = 1080;
+
+    function fit() {
+      var scale = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H);
+      stage.style.transform = 'scale(' + scale + ')';
+    }
+
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+    fit();
+  })();
+</script>
+
+</body>
+</html>
