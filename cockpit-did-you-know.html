@@ -21,9 +21,10 @@
   --mono:'JetBrains Mono',Consolas,Menlo,monospace;
 }
 * { box-sizing:border-box; margin:0; padding:0; }
-html, body { width:100%; height:100%; overflow:hidden; background:#fff; cursor:none; }
+html, body { width:100%; height:100%; overflow:hidden; background:#fff; cursor:none; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 body { font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased; }
-#stage { position:absolute; left:50%; top:50%; width:1920px; height:1080px; transform-origin:0 0; background:var(--paper); overflow:hidden; }
+#stage { position:fixed; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; background:var(--paper); overflow:hidden; }
+#dbg { position:fixed; left:0; top:0; z-index:9; background:#000; color:#fff; font:1.5vw/1.4 monospace; padding:.5vw 1vw; white-space:pre; }
 
 /* masthead */
 .top { height:112px; padding:0 64px; display:flex; align-items:center; gap:32px; }
@@ -521,6 +522,8 @@ table.bs { width:100%; border-collapse:collapse; background:var(--paper); border
   var COCKPIT_URL = '172.21.100.73:5050';   // address shown on every slide
   var SECONDS_PER_SLIDE = 15;               // override with ?t=20
   // URL options: ?t=20 seconds per slide · ?slide=3 hold one slide
+  //              ?zoom=0.5 shrink (or enlarge) by hand if a signage player still gets the size wrong
+  //              ?debug=1 show what the player reports as its screen size
   // Keys: ← → step, space pause.
 
   var q = new URLSearchParams(location.search);
@@ -539,9 +542,30 @@ table.bs { width:100%; border-collapse:collapse; background:var(--paper); border
   });
   var i = 0, timer = null, paused = false;
 
+  var zoom = parseFloat(q.get('zoom')) || 1;
+  var dbg = null;
+  if (q.get('debug') === '1') { dbg = document.createElement('div'); dbg.id = 'dbg'; document.body.appendChild(dbg); }
+
+  // Signage web views (OptiSigns etc.) often zoom the page or report a size the
+  // visible area does not have. So: take the smallest size any API reports, then
+  // measure what was actually drawn and correct it.
+  function least(a) { a = a.filter(function (n) { return n > 0; }); return a.length ? Math.min.apply(null, a) : 0; }
+  function put(s, x, y) { stage.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')'; }
   function fit() {
-    var s = Math.min(innerWidth / 1920, innerHeight / 1080);
-    stage.style.transform = 'scale(' + s + ') translate(-50%, -50%)';
+    var v = window.visualViewport, d = document.documentElement;
+    var w = least([v && v.width, innerWidth, d.clientWidth]);
+    var h = least([v && v.height, innerHeight, d.clientHeight]);
+    if (!w || !h) return;
+    var ox = v ? v.offsetLeft : 0, oy = v ? v.offsetTop : 0;
+    var want = Math.min(w / 1920, h / 1080) * zoom, s = want, k = 1;
+    put(s, 0, 0);
+    var drawn = stage.getBoundingClientRect().width;
+    if (drawn > 0) { k = (1920 * want) / drawn; if (Math.abs(k - 1) < 0.01) k = 1; s = want * k; }
+    put(s, (ox + (w - 1920 * want) / 2) * k, (oy + (h - 1080 * want) / 2) * k);
+    if (dbg) dbg.textContent = 'inner ' + innerWidth + 'x' + innerHeight + '  client ' + d.clientWidth + 'x' + d.clientHeight +
+      '\nvisual ' + (v ? Math.round(v.width) + 'x' + Math.round(v.height) + ' @' + v.scale : 'n/a') +
+      '  screen ' + screen.width + 'x' + screen.height + '  dpr ' + devicePixelRatio +
+      '\nscale ' + s.toFixed(3) + '  correction ' + k.toFixed(3) + '  zoom ' + zoom;
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function show(n) {
@@ -553,7 +577,10 @@ table.bs { width:100%; border-collapse:collapse; background:var(--paper); border
   }
   function play() { clearInterval(timer); if (!hold && !paused) timer = setInterval(function () { show(i + 1); }, secs * 1000); }
 
-  addEventListener('resize', fit);
+  ['resize', 'load', 'pageshow', 'orientationchange'].forEach(function (e) { addEventListener(e, fit); });
+  document.addEventListener('visibilitychange', fit);
+  if (window.visualViewport) { visualViewport.addEventListener('resize', fit); visualViewport.addEventListener('scroll', fit); }
+  setInterval(fit, 2000);   // players that resize the view without telling the page
   addEventListener('keydown', function (e) {
     if (e.key === 'ArrowRight') { show(i + 1); play(); }
     else if (e.key === 'ArrowLeft') { show(i - 1); play(); }
